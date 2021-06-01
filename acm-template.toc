@@ -1,0 +1,79 @@
+\contentsline {chapter}{错误}{iv}{chapter*.2}%
+\contentsline {section}{\numberline {0.1}检查内容}{iv}{section.0.1}%
+\contentsline {section}{\numberline {0.2}精度问题}{iv}{section.0.2}%
+\contentsline {chapter}{\numberline {1}数据结构}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}ST表}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}树状数组}{1}{section.1.2}%
+\contentsline {section}{\numberline {1.3}线段树}{2}{section.1.3}%
+\contentsline {chapter}{\numberline {2}图论}{7}{chapter.2}%
+\contentsline {section}{\numberline {2.1}SPFA}{7}{section.2.1}%
+\contentsline {section}{\numberline {2.2}同余最短路}{7}{section.2.2}%
+\contentsline {section}{\numberline {2.3}分层图}{8}{section.2.3}%
+\contentsline {section}{\numberline {2.4}K短路}{10}{section.2.4}%
+\contentsline {section}{\numberline {2.5}K短路输出路径}{11}{section.2.5}%
+\contentsline {section}{\numberline {2.6}边双联通分量}{17}{section.2.6}%
+\contentsline {section}{\numberline {2.7}点双联通分量}{19}{section.2.7}%
+\contentsline {section}{\numberline {2.8}LCA}{20}{section.2.8}%
+\contentsline {section}{\numberline {2.9}点分治}{22}{section.2.9}%
+\contentsline {section}{\numberline {2.10}最大团}{25}{section.2.10}%
+\contentsline {section}{\numberline {2.11}最小环}{26}{section.2.11}%
+\contentsline {section}{\numberline {2.12}最小点覆盖}{26}{section.2.12}%
+\contentsline {section}{\numberline {2.13}Kruskal 重构}{27}{section.2.13}%
+\contentsline {section}{\numberline {2.14}带花树}{30}{section.2.14}%
+\contentsline {section}{\numberline {2.15}权值带花树}{32}{section.2.15}%
+\contentsline {chapter}{\numberline {3}数学}{38}{chapter.3}%
+\contentsline {section}{\numberline {3.1}快速乘法}{38}{section.3.1}%
+\contentsline {section}{\numberline {3.2}扩展欧几里德}{38}{section.3.2}%
+\contentsline {section}{\numberline {3.3}中国剩余定理}{38}{section.3.3}%
+\contentsline {section}{\numberline {3.4}扩展中国定理}{39}{section.3.4}%
+\contentsline {section}{\numberline {3.5}BSGS}{39}{section.3.5}%
+\contentsline {section}{\numberline {3.6}乘法逆元}{40}{section.3.6}%
+\contentsline {section}{\numberline {3.7}组合数}{41}{section.3.7}%
+\contentsline {section}{\numberline {3.8}卢卡斯定理}{41}{section.3.8}%
+\contentsline {section}{\numberline {3.9}扩展卢卡斯定理}{42}{section.3.9}%
+\contentsline {section}{\numberline {3.10}错排公式}{43}{section.3.10}%
+\contentsline {section}{\numberline {3.11}牛顿迭代开方}{43}{section.3.11}%
+\contentsline {section}{\numberline {3.12}二次剩余}{44}{section.3.12}%
+\contentsline {section}{\numberline {3.13}Pell 方程}{45}{section.3.13}%
+\contentsline {section}{\numberline {3.14}高斯消元}{46}{section.3.14}%
+\contentsline {section}{\numberline {3.15}欧拉函数}{47}{section.3.15}%
+\contentsline {section}{\numberline {3.16}Pollard\_Rho}{48}{section.3.16}%
+\contentsline {section}{\numberline {3.17}FWT}{50}{section.3.17}%
+\contentsline {section}{\numberline {3.18}线性筛}{51}{section.3.18}%
+\contentsline {section}{\numberline {3.19}基础反演}{51}{section.3.19}%
+\contentsline {section}{\numberline {3.20}莫比乌斯反演}{54}{section.3.20}%
+\contentsline {section}{\numberline {3.21}杜教筛}{57}{section.3.21}%
+\contentsline {section}{\numberline {3.22}Min25 筛}{63}{section.3.22}%
+\contentsline {section}{\numberline {3.23}约瑟夫问题}{67}{section.3.23}%
+\contentsline {section}{\numberline {3.24}分数类}{68}{section.3.24}%
+\contentsline {chapter}{\numberline {4}字符串}{71}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Next函数}{71}{section.4.1}%
+\contentsline {section}{\numberline {4.2}KMP}{73}{section.4.2}%
+\contentsline {section}{\numberline {4.3}矩阵加速 KMP}{74}{section.4.3}%
+\contentsline {section}{\numberline {4.4}压缩串 KMP}{75}{section.4.4}%
+\contentsline {section}{\numberline {4.5}Exkmp}{77}{section.4.5}%
+\contentsline {section}{\numberline {4.6}K 串最长公共子串}{79}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Trie}{81}{section.4.7}%
+\contentsline {section}{\numberline {4.8}链表版 Trie}{83}{section.4.8}%
+\contentsline {section}{\numberline {4.9}AC 自动机}{83}{section.4.9}%
+\contentsline {section}{\numberline {4.10} AC 自动机 Fail 树应用}{87}{section.4.10}%
+\contentsline {section}{\numberline {4.11} AC 自动机 + 矩阵}{92}{section.4.11}%
+\contentsline {section}{\numberline {4.12} 后缀数组 SA}{95}{section.4.12}%
+\contentsline {section}{\numberline {4.13} 后缀数组 DC3}{97}{section.4.13}%
+\contentsline {section}{\numberline {4.14} 诱导排序 SA}{100}{section.4.14}%
+\contentsline {section}{\numberline {4.15} 诱导排序 SA+ST 表}{107}{section.4.15}%
+\contentsline {section}{\numberline {4.16} 后缀自动机}{110}{section.4.16}%
+\contentsline {section}{\numberline {4.17} 广义后缀自动机}{117}{section.4.17}%
+\contentsline {section}{\numberline {4.18} Endpos 集维护}{119}{section.4.18}%
+\contentsline {section}{\numberline {4.19} 区间非重子串数量}{121}{section.4.19}%
+\contentsline {section}{\numberline {4.20} 子序列自动机}{126}{section.4.20}%
+\contentsline {section}{\numberline {4.21} Manacher}{128}{section.4.21}%
+\contentsline {section}{\numberline {4.22} Manacher+ 树状数组}{131}{section.4.22}%
+\contentsline {section}{\numberline {4.23} 反对称子串}{132}{section.4.23}%
+\contentsline {section}{\numberline {4.24} 回文自动机}{133}{section.4.24}%
+\contentsline {section}{\numberline {4.25} 双端回文树}{136}{section.4.25}%
+\contentsline {section}{\numberline {4.26} 最小最大表示法}{138}{section.4.26}%
+\contentsline {section}{\numberline {4.27} Lyndon-Word 生成器}{138}{section.4.27}%
+\contentsline {section}{\numberline {4.28} Lyndon 划分}{139}{section.4.28}%
+\contentsline {section}{\numberline {4.29} ShiftAnd}{140}{section.4.29}%
+\contentsline {section}{\numberline {4.30} Hash}{141}{section.4.30}%

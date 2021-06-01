@@ -1,0 +1,248 @@
+\chapter{数据结构}
+
+\section{ST表}
+
+\begin{lstlisting}
+const int N = 5e4 + 10;
+int big[N][30], small[N][30];
+
+// i_j => [i, i + 2^j - 1]
+
+int n, q;
+int a[N], pre[N];
+
+int main() {
+  scanf("%d %d", &n, &q);
+  for (int i = 1; i <= n; ++i) scanf("%d", a + i), pre[i] = pre[i / 2] + 1;
+  for (int i = 1; i <= n; ++i)
+    big[i][0] = small[i][0] = a[i];
+  for (int i = 1; i <= pre[n]; ++i)
+    for (int j = 1; j + (1 << i) - 1 <= n; ++j)
+      big[j][i] = max(big[j][i - 1], big[j + (1 << (i - 1))][i - 1]),
+      small[j][i] = min(small[j][i - 1], small[j + (1 << (i - 1))][i - 1]);
+  while (q --) {
+    int l, r, len;
+    scanf("%d %d", &l, &r);
+    len = pre[r - l + 1] - 1;
+    printf("%d\n", max(big[l][len], big[r - (1 << len) + 1][len]) - min(small[l][len], small[r - (1 << len) + 1][len]));
+  }
+}
+
+\end{lstlisting}
+
+
+\section{树状数组}
+
+\begin{lstlisting}
+inline void add(vector<int> &c, int pos, int sz, int val) {
+  for (int x = pos; x <= sz; x += x & -x)
+    c[x] += val;
+}
+
+inline int query(vector<int> &c, int pos) {
+  int res = 0;
+  for (int x = pos; x; x -= x & -x)
+    res += c[x];
+  return res;
+}
+\end{lstlisting}
+
+\section{线段树}
+
+易错：
+
+\begin{enumerate}
+  \item tag 在pushdown后没有清空
+  \item 线段树开小了导致越界
+\end{enumerate}
+
+\begin{lstlisting}
+/*
+ * 区间加法，区间求和
+ */
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int N = 1e5 + 10;
+#define int long long
+int n, m;
+
+struct Seg {
+  int l, r;
+  int sum, add;
+} t[N << 2];
+
+int a[N];
+
+#define l(o) t[(o)].l
+#define r(o) t[(o)].r
+#define sum(o) t[(o)].sum
+#define add(o) t[(o)].add
+#define cint const int&
+
+inline void build(int o, int l, int r) {
+  l(o) = l, r(o) = r;
+  if (l == r) {
+    sum(o) = a[l]; return;
+  }
+  int mid = l + ((r - l) >> 1);
+  build(o << 1, l, mid), build(o << 1 | 1, mid + 1, r);
+  sum(o) = sum(o << 1) + sum(o << 1 | 1);
+}
+
+inline void pushdown(int o) {
+  if (add(o)) {
+    sum(o << 1) += 1ll * (r(o << 1) - l(o << 1) + 1) * add(o);
+    sum(o << 1 | 1) += 1ll * (r(o << 1 | 1) - l(o << 1 | 1) + 1) * add(o);
+    add(o << 1) += add(o); add(o << 1 | 1) += add(o);
+    add(o) = 0;
+  }
+}
+
+inline void update(int o, cint l, cint r, cint val) {
+  if (l <= l(o) && r(o) <= r) {
+    add(o) += val; sum(o) += 1ll * (r(o) - l(o) + 1) * val;
+    return;
+  }
+  pushdown(o);
+  int mid = l(o) + ((r(o) - l(o)) >> 1);
+  if (l <= mid) update(o << 1, l, r, val);
+  if (r > mid) update(o << 1 | 1, l, r, val);
+  sum(o) = sum(o << 1) + sum(o << 1 | 1);
+}
+
+int query(int o, int l, int r) {
+  if (l <= l(o) && r(o) <= r) return sum(o);
+  pushdown(o);
+  int res = 0;
+  int mid = l(o) + ((r(o) - l(o)) >> 1);
+  if (l <= mid) res += query(o << 1, l, r);
+  if (r > mid) res += query(o << 1 | 1, l, r);
+  return res;
+}
+
+signed main() {
+  scanf("%lld %lld", &n, &m);
+  for (int i = 1; i <= n; ++ i) scanf("%lld", a + i);
+  build(1, 1, n);
+  char s[10];
+  while (m --) {
+    int x, y, z;
+    scanf("%s", s + 1);
+    if (s[1] == '2') {
+      scanf("%lld %lld", &x, &y);
+      printf("%lld\n", query(1, x, y));
+    } else {
+      scanf("%lld %lld %lld", &x, &y, &z);
+      update(1, x, y, z);
+    }
+  }
+}
+
+/*
+ * Prob：{l, r} 是否完全覆盖询问
+ * 离散化前添加节点 l+1, r+1，防止：
+ *     2     4
+ *   1 2  ^  4 5
+ */
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+const int N = 1e5 + 10;
+#define int long long
+int n, m;
+
+struct Seg {
+  int l, r;
+  int sum, add;
+}t[N << 2];
+
+int ql[N], qr[N];
+int sorted[N];
+
+#define l(o) t[(o)].l
+#define r(o) t[(o)].r
+#define sum(o) t[(o)].sum
+#define add(o) t[(o)].add
+#define cint const int&
+
+inline void build(int o, int l, int r) {
+  l(o) = l, r(o) = r; add(o) = 0;
+  if (l == r) {
+    sum(o) = 0; return;
+  }
+  int mid = l + ((r - l) >> 1);
+  build(o << 1, l, mid), build(o << 1 | 1, mid + 1, r);
+  sum(o) = sum(o << 1) + sum(o << 1 | 1);
+}
+
+inline void pushdown(int o) {
+  if (add(o)) {
+    sum(o << 1) = 1ll * (r(o << 1) - l(o << 1) + 1) * add(o);
+    sum(o << 1 | 1) = 1ll * (r(o << 1 | 1) - l(o << 1 | 1) + 1) * add(o);
+    add(o << 1) = add(o); add(o << 1 | 1) = add(o);
+    add(o) = 0;
+  }
+}
+
+inline void update(int o, cint l, cint r, cint val) {
+  if (l <= l(o) && r(o) <= r) {
+    add(o) = val; sum(o) = 1ll * (r(o) - l(o) + 1) * val;
+    return;
+  }
+  pushdown(o);
+  int mid = l(o) + ((r(o) - l(o)) >> 1);
+  if (l <= mid) update(o << 1, l, r, val);
+  if (r > mid) update(o << 1 | 1, l, r, val);
+  sum(o) = sum(o << 1) + sum(o << 1 | 1);
+}
+
+int query(int o, int l, int r) {
+  if (l <= l(o) && r(o) <= r) return sum(o);
+  pushdown(o);
+  int res = 0;
+  int mid = l(o) + ((r(o) - l(o)) >> 1);
+  if (l <= mid) res += query(o << 1, l, r);
+  if (r > mid) res += query(o << 1 | 1, l, r);
+  return res;
+}
+
+signed main() {
+  int t; scanf("%lld", &t);
+  while (t --) {
+    scanf("%lld", &n); m = 0;
+    for (int i = 1; i <= n; ++i) {
+      scanf("%lld %lld", ql + i, qr + i);
+      sorted[++m] = ql[i];
+      sorted[++m] = ql[i] + 1; // important
+      sorted[++m] = qr[i];
+      sorted[++m] = qr[i] + 1;
+    }
+    sort(sorted + 1, sorted + m + 1);
+    int m2 = 0;
+    for (int i = 1; i <= m; ++i) if (sorted[i] != sorted[i - 1]) {
+      sorted[++m2] = sorted[i];
+    }
+    m = m2;
+    for (int i = 1; i <= n; ++i) {
+      ql[i] = lower_bound(sorted + 1, sorted + m + 1, ql[i]) - sorted;
+      qr[i] = lower_bound(sorted + 1, sorted + m + 1, qr[i]) - sorted;
+    }
+    build(1, 1, m);
+    int ans = 0;
+    for (int i = n; i; --i) {
+      int len = query(1, ql[i], qr[i]);
+      if (len < qr[i] - ql[i] + 1) ans ++;
+      update(1, ql[i], qr[i], 1);
+    }
+    printf("%lld\n", ans);
+  }
+}
+
+\end{lstlisting}

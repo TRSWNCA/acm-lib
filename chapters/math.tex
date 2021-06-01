@@ -1,0 +1,1448 @@
+\chapter{数学}
+
+\section{快速乘法}
+
+\begin{lstlisting}
+/*
+  O(1) 快速乘
+*/
+ll mul(ll x, ll y, ll mod) {
+  return (x * y - (ll)(x / (long double)mod * y + 1e-3) * mod + mod) % mod;
+}
+\end{lstlisting}
+
+\section{扩展欧几里德}
+
+\begin{lstlisting}
+/*
+  扩展欧几里得
+  解：ax + by = d = gcd(a, b)
+  全部解:  (x0 + b/d * t, y0 - a/d * t)
+*/
+int exgcd(int a, int b, int &x, int &y) {
+  if (b == 0) { x = 1, y = 0; return a; }
+  int d = exgcd(b, a%b, y, x);
+  y -= (a / b) * x; x = y; return d;
+}
+\end{lstlisting}
+
+\section{中国剩余定理}
+
+\begin{lstlisting}
+/*
+   中国剩余定理
+   n个同余方程，第i个为x b[i](mod a[i])，要求a[i]两两互质
+*/
+inline void CRT(ll* a, ll* m, int n) {
+  for (int i = 1; i <= n; ++ i) M *= m[i];
+  for (int i = 1; i <= n; ++ i) base[i] = M / m[i];
+  ll y;
+  for (int i = 1; i <= n; ++ i) {
+    exgcd(base[i], m[i], ans[i], y);
+    (res += ans[i] * a[i] * base[i]) %= M;
+  }
+  printf("%lld", (res + M) % M);
+}
+
+\end{lstlisting}
+
+\section{扩展中国定理}
+\begin{lstlisting}
+/*
+  中国剩余定理
+  n个同余方程，第i个为x a[i](mod m[i])，不要求m[i]两两互质
+*/
+void exCRT(ll* a, ll* b, int n) {
+  ans = a[1];
+  M = m[1];
+  ll x, y;
+  for(int i = 2; i <= n; ++i){
+    ll B = ((a[i] - ans) % m[i] + m[i]) % m[i];
+    ll d = exgcd(M, m[i], x, y);
+    x = qmul(x, B / d, m[i]);
+    ans += M * x;
+    M *= m[i] / d; // lcm(M, m[i])
+    ans = (ans + M) % M;
+  }
+  printf("%lld\n", ans);
+}
+\end{lstlisting}
+
+\section{BSGS}
+
+\begin{lstlisting}
+/*
+  计算满足 Y^x   Z ( mod P) 的最小非负整数
+*/
+int bsgs(int a, int r, int m) {
+  if (r >= m) return -1;
+  int i, g, x, c = 0, at = int(2 + sqrt(m));
+  for (i = 0, x = 1 % m; i < 50; i++, x = ll(x) * a % m)
+    if (x == r) return i;
+  for (g = x = 1; __gcd(int(ll(x) * a % m), m) != g; c++)
+    g = __gcd(x = ll(x) * a % m, m);
+  if (r % g) return -1;
+  if (x == r) return c;
+  unordered_map<int, int> u;
+  g = phi(m / g), u[x] = 0;
+  g = qpow(a, g - at % g, m);
+  for (i = 1; i < at; i++) {
+    u.insert(P(x = ll(x) * a % m, i));
+      if (x == r) return c + i;
+  }
+  for (i = 1; i < at; i++) {
+    unordered_map<int, int>::iterator t = u.find(r = ll(r) * g % m);
+    if (t != u.end()) return c + i * at + t->second;
+  }
+  return -1;
+}
+void solve(int y, int z, int p) {
+  y %= p;
+  z %= p;
+  int t = bsgs(y, z, p);
+  if (t == -1) {
+    puts("Orz, I cannot find x!");
+    return;
+  } else
+    printf("%d\n", t);
+}
+\end{lstlisting}
+
+\section{乘法逆元}
+
+\begin{lstlisting}
+/*
+  预处理对模p的逆元
+*/
+void pre_inv() {
+  inv[1] = 1;
+  for (int i = 2; i < p; ++ i) {
+    int a = p / i, b = p % i;
+    inv[i] = p - inv[b] * a % p;
+  }
+}
+/*
+  快速幂求逆元
+*/
+int get_inv(int x) {
+  return qpow(x, p - 2, p);
+}
+/*
+  阶乘预处理求模p逆元
+*/
+void init() {
+  f[0] = 1;
+  for (int i = 1; i <= p - 1; ++ i) f[i] = (ll)f[i - 1] * i % p;
+  rf[p - 1] = qpow(f[p - 1], p - 2, p);
+  for (int i = p - 1; i; -- i) rf[i - 1] = (ll)rf[i] * i % p;
+}
+\end{lstlisting}
+
+\section{组合数}
+
+\begin{lstlisting}
+/*
+  组合数， U < p
+*/
+namespace Comb {
+const int U = 200000 + 3;
+int f[U], rf[U];
+ll inv(ll a, ll p) { return qpow(a, p - 2, p); }
+void init() {
+  f[0] = 1;
+  for (int i = 1; i <= U; ++ i) f[i] = 1ll * f[i - 1] * i % p;
+  rf[U] = inv(f[U], p);
+  for (int i = U; i; -- i) rf[i - 1] = 1ll * rf[i] * i % p;
+}
+ll C(int n, int m) {
+  if (m < 0 || m > n) return 0;
+  return (ll)f[n] * rf[n - m] % p * rf[m];
+}
+} // namespace Comb
+\end{lstlisting}
+
+\section{卢卡斯定理}
+
+\begin{lstlisting}
+/*
+  卢卡斯定理
+  lucas(n, m, p) C(n, m) % p
+*/
+namespace Lucas {
+ll mul(ll x, ll y, ll p) {
+  return (x * y - (ll)(x / (long double)p * y + 1e-3) * p + p) % p;
+}
+ll qpow(ll x, ll y, ll p) {
+  ll t = 1;
+  for (; y; y >>= 1, x = mul(x, x, p))
+  if (y & 1) t = mul(t, x, p);
+  return t;
+}
+ll lucas(ll n, ll m, ll p) {
+  if (n < m) return 0;
+  if (!m || n == m) return 1;
+  return Comb::C(n % p, m % p, p) * lucas(n / p, m / p, p) % p;
+}
+} // namespace Lucas 
+\end{lstlisting}
+
+\section{扩展卢卡斯定理}
+
+\begin{lstlisting}
+ll calc(ll n, ll x, ll P) {
+  if (!n) return 1;
+  ll s = 1;
+  for (ll i = 1; i <= P; i++)
+  if (i % x) s = s * i % P;
+  s = qpow(s, n / P, P);
+  for (ll i = n / P * P + 1; i <= n; i++)
+  if (i % x) s = i % P * s % P;
+  return s * calc(n / x, x, P) % P;
+}
+
+ll multilucas(ll n, ll m, ll x, ll P) {
+  if (n < m) return 0;
+  int cnt = 0;
+  for (ll i = n; i; i /= x) cnt += i / x;
+  for (ll i = m; i; i /= x) cnt -= i / x;
+  for (ll i = n - m; i; i /= x) cnt -= i / x;
+  return qpow(x, cnt, P) % P * calc(n, x, P) % P * a_1(calc(m, x, P), P) %
+  P * a_1(calc(n - m, x, P), P) % P;
+}
+
+ll exlucas(ll n, ll m, ll P) {
+  int cnt = 0;
+  ll p[20], a[20];
+  for (ll i = 2; i * i <= P; i++) {
+    if (P % i == 0) {
+      p[++cnt] = 1;
+      while (P % i == 0) p[cnt] = p[cnt] * i, P /= i;
+      a[cnt] = multilucas(n, m, i, p[cnt]);
+    }
+  }
+  if (P > 1) p[++cnt] = P, a[cnt] = multilucas(n, m, P, P);
+  return CRT(cnt, a, p);
+}
+
+\end{lstlisting}
+
+\section{错排公式}
+
+\begin{lstlisting}
+/*
+   错位排列
+   求长度为n序列m位恰好在原来位置的方案数
+*/
+typedef long long ll;
+const int N = 1000010;
+const ll mod = 1e9 + 7;
+ll fac[N], inv[N], f[N];
+int n, m, T;
+int main() {
+  fac[0] = inv[0] = inv[1] = 1;
+  for (int i = 1; i < N; i++) fac[i] = fac[i - 1] * i % mod;
+  for (int i = 2; i < N; i++) inv[i] = (mod - mod / i) * inv[mod % i] % mod;
+  for (int i = 2; i < N; i++) inv[i] = inv[i - 1] * inv[i] % mod;
+  f[f[0] = f[2] = 1] = 0;
+  for (int i = 3; i < N; i++) f[i] = (f[i - 1] + f[i - 2]) * (i - 1) % mod;
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%d%d", &n, &m);
+    printf("%lld\n", 
+      fac[n] * inv[m] % mod * inv[n - m] % mod * f[n - m] % mod);
+  }
+  return 0;
+}
+\end{lstlisting}
+
+
+\section{牛顿迭代开方}
+
+\begin{lstlisting}[language=python]
+n = int(raw_input())
+if n < 2:
+    print(n)
+    continue
+m = 2
+tmpn, len = n, 0
+while (tmpn > 0):
+    tmpn /= 10
+    len += 1
+base, digit, cur = 300, len / m, len % m
+while (cur + m <= base) ans (digit > 0):
+    cur += m
+    digit -= 1
+div = 10 ** (digit * m)
+tmpn = n / div
+x = int(float(tmpn) ** (1.0 / m))
+x *= (10 ** digit)
+while True:
+    x0 = x
+    x = x + x * (n - x ** m) / (n + m)
+    if (x == x0):
+        break
+while (x + 1) ** m <= n:
+    x = x + 1
+print(x)
+\end{lstlisting}
+
+\section{二次剩余}
+
+\begin{lstlisting}
+
+/*
+   二次剩余
+   sqrt(n)%P
+   Example
+       (x+y)%P=b  (x*y)%P=c
+       求x和y
+*/
+const ll P = 1e9 + 7;
+const ll inv2 = (P + 1) / 2;
+int T;
+ll b, c;
+// 求sqrt(n)%P
+ll Tonelli_Shanks(ll n, ll p) {
+  if (p == 2) return (n & 1) ? 1 : -1;
+  if (qpow(n, p >> 1, p) + 1 == p) return -1;
+  if (p & 2) return qpow(n, p + 1 >> 2, p);
+  int s = __builtin_ctzll(p ^ 1);
+  ll q = p >> s, z = 2;
+  for (; qpow(z, p >> 1, p) == 1; ++z)
+    ;
+  ll c = qpow(z, q, p);
+  ll r = qpow(n, q + 1 >> 1, p);
+  ll t = qpow(n, q, p), tmp;
+  for (int m = s, i; t != 1;) {
+    for (i = 0, tmp = t; tmp != 1; ++i) tmp = tmp * tmp % p;
+    for (; i < --m;) c = c * c % p;
+    r = r * c % p;
+    c = c * c % p;
+    t = t * c % p;
+  }
+  return r;
+}
+int main() {
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%lld%lld", &b, &c);
+    ll x = Tonelli_Shanks(((b * b - 4 * c) % P + P) % P, P);
+    if (x == -1)
+      puts("-1 -1");
+    else {
+      ll u1 = (b - x + P) * inv2 % P;
+      ll u2 = (b + x) * inv2 % P;
+      if (u1 > u2) swap(u1, u2);
+      printf("%lld %lld\n", u1, u2);
+    }
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{Pell 方程}
+
+\begin{lstlisting}
+n = int(raw_input())
+j = 1
+while j * j < n:
+    j += 1
+if j * j == n:
+    print(j, 1)
+if j * j > n:
+    p = [0 for i in range(0, 1001)]
+    q = [0 for i in range(0, 1001)]
+    a = [0 for i in range(0, 1001)]
+    g = [0 for i in range(0, 1001)]
+    h = [0 for i in range(0, 1001)]
+    p[1] = q[0] = h[1] = 1
+    p[0] = q[1] = g[1] = 0
+    a[2] = j - 1
+    i = 2
+    while 1:
+        g[i] = -g[i - 1] + a[i] * h[i - 1]
+        h[i] = (n - g[i] * g[i]) / h[i - 1]
+        a[i + 1] = (g[i] + a[2]) / h[i]
+        p[i] = a[i] * p[i - 1] + p[i - 2]
+        q[i] = a[i] * q[i - 1] + q[i - 2]
+        if (p[i] * p[i] - n * q[i] * q[i] == 1):
+            print p[i], q[i]
+            break
+        i += 1
+
+\end{lstlisting}
+
+\section{高斯消元}
+
+\begin{lstlisting}
+/*
+    高斯消元
+*/
+double a[20][20], b[20], c[20][20];
+
+int main() {
+  cin >> n;
+  for (int i = 1; i <= n + 1; ++ i)
+  for (int j = 1; j <= n; ++ j) scanf("%lf", &a[i][j]);
+  for (int i = 1; i <= n; ++ i)
+    for (int j = 1; j <= n; ++ j) {
+      c[i][j] = 2 * (a[i][j] - a[i + 1][j]);
+      b[i] += a[i][j] * a[i][j] - a[i + 1][j] * a[i + 1][j];
+    }
+  for (int i = 1; i <= n; ++ i) {
+    for (int j = i; j <= n; ++ j) {
+      if (fabs(c[j][i]) > 1e-8) {
+        for (int k = 1; k <= n; ++ k) swap(c[i][k], c[j][k]);
+        swap(b[i], b[j]);
+        break;
+      }
+    }
+    for (int j = 1; j <= n; ++ j) {
+      if (i == j) continue;
+      double rate = c[j][i] / c[i][i];
+      for (int k = i; k <= n; ++ k) c[j][k] -= c[i][k] * rate;
+      b[j] -= b[i] * rate;
+    }
+  }
+  for (int i = 1; i < n; ++ i) printf("%.3f ", b[i] / c[i][i]);
+  printf("%.3f\n", b[n] / c[n][n]);
+}
+\end{lstlisting}
+
+\section{欧拉函数}
+
+\begin{lstlisting}
+/*
+   欧拉函数
+   phi(N)=N*(1-1/P1)*(1-1/P2)*...*(1-1/Pn).
+   定理：
+     1.欧拉函数是非完全积性函数: phi(m*n)=phi(n)*phi(m)
+     当且仅当GCD(n,m)=1.
+     2.一个数的所有质因子之和是Euler(n)*n/2.
+     3.若n是素数p的k次幂，phi(n)=p^k-p^(k-1)=(p-1)p^(k-1)，
+   特殊性质：
+     1.当n为奇数时，phi(2n)=phi(n).
+     2.对于质数p，phi(p)=p-1
+     3.除了N=2,phi(N)都是偶数.
+*/
+// 筛法求欧拉函数
+void Get_Euler() {
+  for (int i = 1; i <= n; i++) phi[i] = i;
+  for (int i = 2; i <= n; i++)
+    if (phi[i] == i)
+      for (int j = i; j <= n; j += i) phi[j] = phi[j] / i * (i - 1);
+}
+int Euler(int n) {
+  int t = 1, i;
+  if (!(n & 1))
+    for (n >>= 1; !(n & 1); n >>= 1, t <<= 1)
+      ;
+  for (i = 3; i * i <= n; i += 2)
+    if (n % i == 0)
+      for (n /= i, t *= i - 1; n % i == 0; n /= i, t *= i)
+        ;
+  if (n > 1) t *= n - 1;
+  return t;
+}
+\end{lstlisting}
+
+\section{Pollard\_Rho}
+
+\begin{lstlisting}
+/*
+   Pollard_Rho
+   题目大意：
+   给出最大公约数和最小公倍数，满足要求的x和y，且x+y最小
+   题解：
+   我们发现，(x/gcd)*(y/gcd)=lcm/gcd，并且x/gcd和y/gcd互质
+   那么我们先利用把所有的质数求出来Pollard_Rho，将相同的质数合并
+   现在的问题转变成把合并后的质数分为两堆，使得x+y最小
+   我们考虑不等式a+b>=2sqrt(ab),在a趋向于sqrt(ab)的时候a+b越小
+   所以我们通过搜索求出最逼近sqrt(ab)的值即可。
+ */
+#define C 2730
+#define S 3
+using namespace std;
+typedef long long ll;
+ll n, m, s[1000], cnt, f[1000], cnf, ans;
+ll gcd(ll a, ll b) { return b ? gcd(b, a % b) : a; }
+ll mul(ll a, ll b, ll n) {
+  return (a * b - (ll)(a / (long double)n * b + 1e-3) * n + n) % n;
+}
+ll pow(ll a, ll b, ll n) {
+  ll d = 1;
+  a %= n;
+  while (b) {
+    if (b & 1) d = mul(d, a, n);
+    a = mul(a, a, n);
+    b >>= 1;
+  }
+  return d;
+}
+bool check(ll a, ll n) {
+  ll m = n - 1, x, y;
+  int i, j = 0;
+  while (!(m & 1)) m >>= 1, j++;
+  x = pow(a, m, n);
+  for (i = 1; i <= j; x = y, i++) {
+    y = pow(x, 2, n);
+    if ((y == 1) && (x != 1) && (x != n - 1)) return 1;
+  }
+  return y != 1;
+}
+bool miller_rabin(int times, ll n) {
+  ll a;
+  if (n == 1) return 0;
+  if (n == 2) return 1;
+  if (!(n & 1)) return 0;
+  while (times--)
+    if (check(rand() % (n - 1) + 1, n)) return 0;
+  return 1;
+}
+ll pollard_rho(ll n, int c) {
+  ll i = 1, k = 2, x = rand() % n, y = x, d;
+  while (1) {
+    i++, x = (mul(x, x, n) + c) % n, d = gcd(y - x, n);
+    if (d > 1 && d < n) return d;
+    if (y == x) return n;
+    if (i == k) y = x, k <<= 1;
+  }
+}
+void findfac(ll n, int c) {
+  if (n == 1) return;
+  if (miller_rabin(S, n)) {
+    s[cnt++] = n;
+    return;
+  }
+  ll m = n;
+  while (m == n) m = pollard_rho(n, c--);
+  findfac(m, c), findfac(n / m, c);
+}
+void dfs(int pos, long long x, long long k) {
+  if (pos > cnf) return;
+  if (x > ans && x <= k) ans = x;
+  dfs(pos + 1, x, k);
+  x *= f[pos];
+  if (x > ans && x <= k) ans = x;
+  dfs(pos + 1, x, k);
+}
+int main() {
+  while (~scanf("%lld%lld", &m, &n)) {
+    if (n == m) {
+      printf("%lld %lld\n", n, n);
+      continue;
+    }
+    cnt = 0;
+    long long k = n / m;
+    findfac(k, C);
+    sort(s, s + cnt);
+      f[0] = s[0];
+    cnf = 0;
+    for (int i = 1; i < cnt; i++) {
+      if (s[i] == s[i - 1])
+        f[cnf] *= s[i];
+      else
+        f[++cnf] = s[i];
+    }
+    long long tmp = (long long)sqrt(1.0 * k);
+    ans = 1;
+    dfs(0, 1, tmp);
+    printf("%lld %lld\n", m * ans, k / ans * m);
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{FWT}
+
+\begin{lstlisting}
+/*
+   快速沃尔什变化
+*/
+void FWT(int *a, int n) {
+  for (int d = 1; d < n; d <<= 1)
+    for (int m = d << 1, i = 0; i < n; i += m)
+      for (int j = 0; j < d; j++) {
+        int x = a[i + j], y = a[i + j + d];
+        // xor:a[i+j]=x+y,a[i+j+d]=x-y;
+        // and:a[i+j]=x+y;
+        // or:a[i+j+d]=x+y;
+      }
+}
+void UFWT(int *a, int n) {
+  for (int d = 1; d < n; d <<= 1)
+    for (int m = d << 1, i = 0; i < n; i += m)
+      for (int j = 0; j < d; j++) {
+        int x = a[i + j], y = a[i + j + d];
+        // xor:a[i+j]=(x+y)/2,a[i+j+d]=(x-y)/2;
+        // and:a[i+j]=x-y;
+        // or:a[i+j+d]=y-x;
+      }
+}
+
+\end{lstlisting}
+
+\section{线性筛}
+
+\begin{lstlisting}
+/*
+   mu[i]: 莫比乌斯函数
+   phi[i]: 欧拉函数
+   d[i]: i的质因子个数
+ */
+bool notp[N];
+int prime[N], pnum, mu[N], c[N], d[N], phi[N];
+void sieve() {
+  memset(notp, 0, sizeof(notp));
+  notp[0] = notp[1] = mu[1] = phi[1] = 1;
+  pnum = 0;
+  for (int i = 2; i < N; i++) {
+    if (!notp[i]) {
+      prime[++pnum] = i;
+      mu[i] = -1;
+      phi[i] = i - 1;
+      d[i] = 1;
+    }
+    for (int j = 1; j <= pnum && prime[j] * i < N; j++) {
+      notp[prime[j] * i] = 1;
+      d[prime[j] * i] = d[i] + 1;
+      if (i % prime[j] == 0) {
+        mu[prime[j] * i] = 0;
+        phi[i * prime[j]] = phi[i] * prime[j];
+        break;
+      }
+      mu[prime[j] * i] = -mu[i];
+      phi[i * prime[j]] = phi[i] * (prime[j] - 1);
+    }
+  }
+}
+
+\end{lstlisting}
+
+\section{基础反演}
+
+\begin{lstlisting}
+/*
+   f(n)= [n|d]g(d)
+   g(n)= [n|d]mu[d/n]f(d)
+ */
+//已知 g ,求 f
+for (int i = 1; i <= n; ++i)
+for (int j = i + i; j <= n; j += i) f[i] += f[j];
+//已知 f ,求 g
+for (int i = n; i >= 1; --i)
+for (int j = i + i; j <= n; j += i) f[i] -= f[j];
+/*
+   f(n)= [d|n]g(d)
+   g(n)= [d|n]mu[n/d]f(d)= [d|n]mu[d]f(n/d)
+ */
+//已知 g ,求 f
+for (int i = n; i >= 1; --i)
+for (int j = i + i; j <= n; j += i) f[j] += f[i];
+//已知 f ,求 g
+for (int i = 1; i <= n; ++i)
+for (int j = i + i; j <= n; j += i) f[j] -= f[i];
+/*
+   Example1：
+   gcd(a[i],a[j],a[k],……)
+   求子集gcd之和
+ */
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 1010, P = 1e8 + 7;
+int T, n, x, f[N], pw[N];
+int main() {
+  for (int i = pw[0] = 1; i < N; i++) pw[i] = pw[i - 1] * 2 % P;
+  scanf("%d", &T);
+  while (T--) {
+    memset(f, 0, sizeof(f));
+    scanf("%d", &n);
+    for (int i = 1; i <= n; i++) {
+      scanf("%d", &x);
+      f[x]++;
+    }
+    n = 1000;
+    for (int i = 1; i <= n; i++) {
+      for (int j = i + i; j <= n; j += i) f[i] += f[j];
+      f[i] = pw[f[i]] - 1;
+    }
+    for (int i = n; i; i--) {
+      for (int j = i + i; j <= n; j += i) f[i] = (f[i] - f[j] + P) % P;
+    }
+    int ans = 0;
+    for (int i = 1; i <= n; i++) ans = (ans + 1ll * i * f[i]) % P;
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+/*
+   Example2：
+   gcd(a[i],a[j])*(gcd(a[i],a[j])-1)
+ */
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 10010, P = 10007;
+int n, x, c[N], f[N];
+int main() {
+  while (~scanf("%d", &n)) {
+    memset(c, 0, sizeof(c));
+    memset(f, 0, sizeof(f));
+    for (int i = 1; i <= n; i++) {
+      scanf("%d", &x);
+      c[x]++;
+    }
+    n = 10000;
+    for (int i = 1; i <= n; i++) {
+      for (int j = i; j <= n; j += i) f[i] += c[j];
+      f[i] = f[i] * f[i] % P;
+    }
+    for (int i = n; i >= 1; --i)
+      for (int j = i + i; j <= n; j += i) f[i] -= f[j];
+    int ans = 0;
+    for (int i = 2; i <= n; i++)
+      ans = (ans + f[i] * i % P * (i - 1) % P) % P;
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+/*
+   Example3：
+   gcd(a[i],a[j],a[k],a[l])
+ */
+#include <cstdio>
+#include <cstring>
+using namespace std;
+const int N = 10010;
+int n, x, c[N];
+long long f[N];
+int main() {
+  while (~scanf("%d", &n)) {
+    memset(c, 0, sizeof(c));
+    memset(f, 0, sizeof(f));
+    for (int i = 1; i <= n; i++) {
+      scanf("%d", &x);
+      c[x]++;
+    }
+    n = 10000;
+    for (int i = 1; i <= n; i++) {
+      for (int j = i; j <= n; j += i) f[i] += c[j];
+        if (f[i] > 3)
+          f[i] = f[i] * (f[i] - 1) * (f[i] - 2) * (f[i] - 3) / 24;
+        else
+          f[i] = 0;
+    }
+    for (int i = n; i >= 1; --i)
+      for (int j = i + i; j <= n; j += i) f[i] -= f[j];
+    printf("%lld\n", f[1]);
+  }
+  return 0;
+}
+\end{lstlisting}
+
+\section{莫比乌斯反演}
+\begin{lstlisting}
+/*
+   莫比乌斯反演
+   f(n)= [n|d]g(d)
+   g(n)= [n|d]mu[d/n]f(d)
+   ----------------------
+   f(n)= [d|n]g(d)
+   g(n)= [d|n]mu[n/d]f(d)= [d|n]mu[d]f(n/d)
+ */
+/*
+   Example1:
+   (i,a,b) (j,c,d)[gcd(i,j)==k]
+ */
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+const int N = 100010;
+bool notp[N];
+int prime[N], pnum, mu[N];
+void sieve() {
+  memset(notp, 0, sizeof(notp));
+  notp[0] = notp[1] = mu[1] = 1;
+  for (int i = 2; i < N; i++) {
+    if (!notp[i]) {
+      prime[++pnum] = i;
+      mu[i] = -1;
+    }
+    for (int j = 1; j <= pnum && prime[j] * i < N; j++) {
+      notp[prime[j] * i] = 1;
+      if (i % prime[j] == 0) {
+        mu[prime[j] * i] = 0;
+        break;
+      }
+      mu[prime[j] * i] = -mu[i];
+    }
+  }
+}
+ll f[N];
+ll solve(int n, int m) {
+  if (n > m) swap(n, m);
+  ll res = 0;
+  for (int i = 1, last; i <= n; i = last + 1) {
+    last = min(n / (n / i), m / (m / i));
+    res += (f[last] - f[i - 1]) * (n / i) * (m / i);
+  }
+  return res;
+}
+int T, a, b, c, d, k;
+int main() {
+  sieve();
+  for (int i = 1; i < N; i++) f[i] = f[i - 1] + mu[i];
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%d%d%d%d%d", &a, &b, &c, &d, &k);
+    printf("%lld\n", solve(b / k, d / k) - solve(b / k, (c - 1) / k) -
+        solve((a - 1) / k, d / k) +
+        solve((a - 1) / k, (c - 1) / k));
+  }
+  return 0;
+}
+/*
+   Example2：
+   [gcd(i,j)素因子个数<=P]
+ */
+#include <bits/stdc++.h>
+using namespace std;
+using namespace std;
+typedef long long ll;
+const int N = 500010;
+bool notp[N];
+int prime[N], pnum, mu[N], d[N];
+void sieve() {
+  memset(notp, 0, sizeof(notp));
+  notp[0] = notp[1] = mu[1] = 1;
+  for (int i = 2; i < N; i++) {
+    if (!notp[i]) {
+      prime[++pnum] = i;
+      mu[i] = -1;
+        d[i] = 1;
+    }
+    for (int j = 1; j <= pnum && prime[j] * i < N; j++) {
+      notp[prime[j] * i] = 1;
+      d[prime[j] * i] = d[i] + 1;
+      if (i % prime[j] == 0) {
+        mu[prime[j] * i] = 0;
+        break;
+      }
+      mu[prime[j] * i] = -mu[i];
+    }
+  }
+}
+int f[N][21];
+void calF() {
+  for (int i = 1; i < N; i++)
+    for (int j = i; j < N; j += i) f[j][d[i]] += mu[j / i];
+  for (int i = 1; i < N; i++)
+    for (int j = 1; j <= 20; j++) f[i][j] += f[i][j - 1];
+  for (int i = 1; i < N; i++)
+    for (int j = 0; j <= 20; j++) f[i][j] += f[i - 1][j];
+}
+ll solve(int n, int m, int p) {
+  if (n > m) swap(n, m);
+  ll res = 0;
+  for (int i = 1, last; i <= n; i = last + 1) {
+    last = min(n / (n / i), m / (m / i));
+    res += (ll)(f[last][p] - f[i - 1][p]) * (n / i) * (m / i);
+  }
+  return res;
+}
+int T, n, m, p;
+int main() {
+  sieve();
+  calF();
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%d%d%d", &n, &m, &p);
+    p = min(p, 20);
+    printf("%lld\n", solve(n, m, p));
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{杜教筛}
+\begin{lstlisting}
+
+/*
+   杜教筛
+   g(1)S(n)=\sum_{i=1}^{n}h(i)−\sum_{d=2}^{n}g(d)S(n/d)
+ */
+/*
+   Example1:
+   莫比乌斯函数区段和
+ */
+const int mod = 1333331;
+typedef long long LL;
+LL a, b, miu[5000010];
+int p[500010], cnt = 0;
+bool vis[5000010];
+struct HASHMAP {
+  int h[mod + 10], cnt, nxt[100010];
+  LL st[100010], S[100010];
+  void push(LL k, LL v) {
+    int key = k % mod;
+    for (int i = h[key]; i; i = nxt[i]) {
+      if (S[i] == k) return;
+    }
+    ++cnt;
+    nxt[cnt] = h[key];
+    h[key] = cnt;
+    S[cnt] = k;
+    st[cnt] = v;
+  }
+  LL ask(LL k) {
+    int key = k % mod;
+    for (int i = h[key]; i; i = nxt[i]) {
+      if (S[i] == k) return st[i];
+    }
+    return -1;
+  }
+} H;
+void Get_Prime() {
+  miu[1] = 1;
+  for (int i = 2; i <= 5000000; ++i) {
+    if (!vis[i]) {
+      p[++cnt] = i;
+      miu[i] = -1;
+    }
+    for (int j = 1; j <= cnt; ++j) {
+      if (1LL * p[j] * i > 5000000) break;
+      int ip = i * p[j];
+      vis[ip] = true;
+      if (i % p[j] == 0) break;
+      miu[ip] = -miu[i];
+    }
+  }
+  for (int i = 2; i <= 5000000; ++i) miu[i] += miu[i - 1];
+}
+LL miu_sum(LL n) {
+  if (n <= 5000000) return miu[n];
+  LL tmp = H.ask(n), la, A = 1;
+  if (tmp != -1) return tmp;
+  for (LL i = 2; i <= n; i = la + 1) {
+    LL now = n / i;
+    la = n / now;
+    A = A - (la - i + 1) * miu_sum(n / i);
+  }
+  H.push(n, A);
+  return A;
+}
+int main() {
+  scanf("%lld%lld", &a, &b);
+  Get_Prime();
+  printf("%lld\n", miu_sum(b) - miu_sum(a - 1));
+  return 0;
+}
+/*
+   Example2:
+   欧拉函数前缀和
+ */
+typedef long long LL;
+const int mod = 1333331, inv2 = 500000004;
+const LL MOD = 1e9 + 7;
+LL a, b, miu[5000010], phi[5000010];
+int p[500010], cnt = 0, i, tot;
+bool v[5000010];
+struct HASHMAP {
+  int h[mod + 10], cnt, nxt[100010];
+  LL st[100010], S[100010];
+  void push(LL k, LL v) {
+    int key = k % mod;
+    for (int i = h[key]; i; i = nxt[i]) {
+      if (S[i] == k) return;
+    }
+    ++cnt;
+    nxt[cnt] = h[key];
+    h[key] = cnt;
+    S[cnt] = k;
+    st[cnt] = v;
+  }
+  LL ask(LL k) {
+    int key = k % mod;
+    for (int i = h[key]; i; i = nxt[i]) {
+      if (S[i] == k) return st[i];
+    }
+    return -1;
+  }
+} H;
+void Get_Prime() {
+  for (miu[1] = phi[1] = 1, i = 2; i <= 5000000; i++) {
+    if (!v[i]) p[tot++] = i, miu[i] = -1, phi[i] = i - 1;
+    for (int j = 0; i * p[j] <= 5000000 && j < tot; j++) {
+      v[i * p[j]] = 1;
+      if (i % p[j]) {
+        miu[i * p[j]] = -miu[i];
+        phi[i * p[j]] = phi[i] * (p[j] - 1);
+      } else {
+        miu[i * p[j]] = 0;
+        phi[i * p[j]] = phi[i] * p[j];
+        break;
+      }
+    }
+  }
+  for (int i = 2; i <= 5000000; ++i) phi[i] = (phi[i - 1] + phi[i]) % MOD;
+}
+LL phi_sum(LL n) {
+  if (n <= 5000000) return phi[n];
+  LL tmp = H.ask(n), la, A = 0;
+  if (tmp != -1) return tmp;
+  for (LL i = 2; i <= n; i = la + 1) {
+    LL now = n / i;
+    la = n / now;
+    (A += (la - i + 1) % MOD * phi_sum(n / i) % MOD) %= MOD;
+  }
+  A = ((n % MOD) * (n % MOD + 1) % MOD * inv2 % MOD - A + MOD) % MOD;
+  H.push(n, A);
+  return A;
+}
+int main() {
+  scanf("%lld", &a);
+  Get_Prime();
+  printf("%lld\n", phi_sum(a));
+  return 0;
+}
+/*
+   Example3：
+   求[1,n][1,n]最大公约数之和
+   枚举最大公约数k，答案为2* (k*phi_sum(n/k))-n*(n+1)/2
+   phi_sum利用杜教筛实现
+ */
+typedef long long LL;
+const int mod = 1333331, inv2 = 500000004;
+const LL MOD = 1e9 + 7;
+LL a, b, n, miu[5000010], phi[5000010];
+int p[500010], cnt = 0, i, tot;
+bool v[5000010];
+struct HASHMAP {
+  int h[mod + 10], cnt, nxt[100010];
+  LL st[100010], S[100010];
+  void push(LL k, LL v) {
+    int key = k % mod;
+    for (int i = h[key]; i; i = nxt[i]) {
+      if (S[i] == k) return;
+    }
+    ++cnt;
+    nxt[cnt] = h[key];
+    h[key] = cnt;
+    S[cnt] = k;
+      st[cnt] = v;
+  }
+  LL ask(LL k) {
+    int key = k % mod;
+    for (int i = h[key]; i; i = nxt[i]) {
+      if (S[i] == k) return st[i];
+    }
+    return -1;
+  }
+} H;
+void Get_Prime() {
+  for (miu[1] = phi[1] = 1, i = 2; i <= 5000000; i++) {
+    if (!v[i]) p[tot++] = i, miu[i] = -1, phi[i] = i - 1;
+    for (int j = 0; i * p[j] <= 5000000 && j < tot; j++) {
+      v[i * p[j]] = 1;
+      if (i % p[j]) {
+        miu[i * p[j]] = -miu[i];
+        phi[i * p[j]] = phi[i] * (p[j] - 1);
+      } else {
+        miu[i * p[j]] = 0;
+        phi[i * p[j]] = phi[i] * p[j];
+        break;
+      }
+    }
+  }
+  for (int i = 2; i <= 5000000; ++i) phi[i] = (phi[i - 1] + phi[i]) % MOD;
+}
+LL phi_sum(LL n) {
+  if (n <= 5000000) return phi[n];
+  LL tmp = H.ask(n), la, A = 0;
+  if (tmp != -1) return tmp;
+  for (LL i = 2; i <= n; i = la + 1) {
+    LL now = n / i;
+    la = n / now;
+    (A += (la - i + 1) % MOD * phi_sum(n / i) % MOD) %= MOD;
+  }
+  A = ((n % MOD) * (n % MOD + 1) % MOD * inv2 % MOD - A + MOD) % MOD;
+  H.push(n, A);
+  return A;
+}
+int main() {
+  scanf("%lld", &n);
+  Get_Prime();
+  LL la, ans = 0;
+  for (LL i = 1; i <= n; i = la + 1) {
+    LL now = n / i;
+    la = n / now;
+    ans = (ans + (i + la) % MOD * (la - i + 1) % MOD * inv2 % MOD *
+        phi_sum(now) % MOD) %
+      MOD;
+  }
+  ans = ans * 2 % MOD;
+  LL k = n % MOD;
+  ans = (ans - k * (k + 1) % MOD * inv2 % MOD + MOD) % MOD;
+  printf("%lld\n", ans);
+  return 0;
+}
+/*
+   Example4：
+   求[1,n][1,m]两两LCM的和
+ */
+namespace Sum_LCM {
+  int tot, p[N], miu[N], v[N];
+  LL sum[N];
+  void mobius(int n) {
+    int i, j;
+    for (miu[1] = 1, i = 2; i <= n; i++) {
+      if (!v[i]) p[tot++] = i, miu[i] = -1;
+      for (j = 0; j < tot && i * p[j] <= n; j++) {
+        v[i * p[j]] = 1;
+        if (i % p[j])
+          miu[i * p[j]] = -miu[i];
+        else
+          break;
+      }
+    }
+    for (i = 1; i <= n; i++)
+      sum[i] = (sum[i - 1] + (1LL * miu[i] * i % mod * i % mod)) % mod;
+  }
+  LL Sum(LL x, LL y) {
+    return (((x * (x + 1) / 2) % mod) * ((y * (y + 1) / 2) % mod) % mod);
+  }
+  LL F(int n, int m) {
+    LL t = 0;
+    if (n > m) swap(n, m);
+    for (int i = 1, j = 0; i <= n; i = j + 1) {
+      j = min(n / (n / i), m / (m / i));
+      t = (t + (sum[j] - sum[i - 1] + mod) % mod * Sum((LL)n / i, (LL)m / i) %
+          mod) %
+        mod;
+    }
+    return t;
+  }
+  LL Cal_Sum(int n, int m) {
+    if (n > m) swap(n, m);
+    mobius(n);
+    LL ans = 0;
+    for (int i = 1, j = 0; i <= n; i = j + 1) {
+      j = min(n / (n / i), m / (m / i));
+      ans = (ans +
+          1LL * (i + j) * (j - i + 1) / 2 % mod * F(n / i, m / i) % mod) %
+        mod;
+    }
+    return ans;
+  }
+} // namespace Sum_LCM
+
+\end{lstlisting}
+
+
+\section{Min25 筛}
+
+\begin{lstlisting}
+
+/*
+   Min25筛
+   S(x,y):  F(i)[i<=x&&i的最小质因子不小于P_y]
+   pi>n时S(n,i)=0
+   pi<=n时S(n,i)=\sum_{j>=i}^{(p_j)^2<=n}\sum_{c=1}^{(p_j)^{c+1}}S(n/p_i,j+1)*F(p_i^c)+F(p_i^{c+1})
+   +\sum_{x是质数且x<=n}F(x)-\sum_{j=1}^{i-1}F(p_i)
+   F(i)的前缀和答案为S(n,1)+F(1)
+ */
+/*
+   Example1:
+   欧拉函数前缀和&&莫比乌斯函数前缀和
+ */
+#include <bits/stdc++.h>
+typedef long long ll;
+const int N = 500000 << 1; // sqrt(n)*2
+int n, m, Sqr, cnt, P[N >> 2], h[N], w[N];
+ll sp[N], g[N];
+inline int ID(int x) { return x <= Sqr ? x : m - n / x + 1; }
+// g:前缀质数和
+// h:前缀质数个数
+void Init(int n) {
+  Sqr = sqrt(n);
+  cnt = m = 0;
+  for (ll i = 1; i <= n; i = w[m] + 1ll)
+    w[++m] = n / (n / i), g[m] = (1ll * w[m] * ((ll)w[m] + 1) >> 1) - 1,
+      h[m] = w[m] - 1;
+  for (int i = 2; i <= Sqr; ++i)
+    if (h[i] != h[i - 1]) {
+      P[++cnt] = i, sp[cnt] = sp[cnt - 1] + i;
+      int lim = i * i;
+      for (int j = m; lim <= w[j]; --j) {
+        int k = ID(w[j] / i);
+        g[j] -= 1ll * i * (g[k] - sp[cnt - 1]);
+        h[j] -= h[k] - cnt + 1;
+      }
+    }
+}
+// 欧拉函数前缀和
+ll S_Phi(int x, int y) {
+  if (x <= 1 || P[y] > x) return 0;
+  ll res = g[ID(x)] - h[ID(x)] - sp[y - 1] + y - 1; // g-h
+  for (int i = y; i <= cnt && P[i] * P[i] <= x; ++i)
+    for (ll p = P[i], p1 = p, t = p - 1; 1ll * p1 * p <= x; p1 *= p, t *= p)
+      res += 1ll * (S_Phi(x / p1, i + 1) + p) * t;
+  return res;
+}
+// 莫比乌斯函数前缀和
+int S_Mu(int x, int y) {
+  if (x <= 1 || P[y] > x) return 0;
+  int res = -h[ID(x)] + y - 1; // h
+  for (int i = y; i <= cnt && P[i] * P[i] <= x; ++i)
+    res -= S_Mu(x / P[i], i + 1);
+  return res;
+}
+int main() {
+  int T;
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%d", &n);
+    if (!n)
+      puts("0 0");
+    else {
+      Init(n);
+      printf("%lld %d\n", S_Phi(n, 1) + 1, S_Mu(n, 1) + 1);
+    }
+  }
+  return 0;
+}
+/*
+    Example2:
+        F(1)=1
+        F(p^c)=p xor c(p的c次的函数值为p和c的异或值)
+        F(ab)=F(a)F(b) gcd(a,b)==1
+        求F前缀和(n<=10^10)
+    Solution:
+        除了2之外，p xor 1等于p-1，
+        因此我们可以用质数常函数前缀g和质数前缀个数函数h
+        来计算 _{x是质数且x<=n}F(x)
+ */
+#include <bits/stdc++.h>
+typedef long long ll;
+const int N = 100000 << 1 | 1; // sqrt(n)*2
+const int P = 1e9 + 7;
+int m, cnt, pri[N >> 2], h[N];
+ll n, Sqr, sp[N], g[N], w[N];
+inline int ID(ll x) { return x <= Sqr ? x : m - n / x + 1; }
+// g:前缀质数和
+// h:前缀质数个数
+void Init(ll n) {
+  Sqr = sqrt(n);
+  cnt = m = 0;
+  for (ll i = 1; i <= n; i = w[m] + 1) {
+    w[++m] = n / (n / i);
+    ll t = w[m] % P;
+    g[m] = (t * (t + 1) >> 1) % P - 1;
+    h[m] = w[m] - 1;
+  }
+  for (int i = 2; i <= Sqr; ++i){
+    if (h[i] != h[i - 1]) {
+      pri[++cnt] = i, sp[cnt] = sp[cnt - 1] + i;
+      ll lim = 1ll * i * i;
+      for (int j = m; lim <= w[j]; --j) {
+        int k = ID(w[j] / i);
+        g[j] -= i * (g[k] - sp[cnt - 1]);
+        h[j] -= h[k] - cnt + 1;
+      }
+    }
+    g[i] %= P;
+  }
+}
+ll S(ll x, int y) {
+  if (x <= 1 || pri[y] > x) return 0;
+  ll res = g[ID(x)] - g[ID(pri[y - 1])] + P;
+  for (int i = y; i <= cnt && 1ll * pri[i] * pri[i] <= x; ++i) {
+    for (ll p = pri[i], p1 = p, j = 1; p1 * p <= x; p1 *= p, ++j)
+      res += S(x / p1, i + 1) * (pri[i] ^ j) + (pri[i] ^ (j + 1));
+  }
+  return res % P;
+}
+int main() {
+    scanf("%lld", &n);
+  Init(n);
+  for (int i = 1; i <= m; ++i) g[i] = (g[i] - h[i] + (i > 1) * 2 + P) % P;
+  printf("%lld\n", (S(n, 1) + 1) % P);
+  return 0;
+}
+/*
+    Example3:
+        对任意p为素数，
+        p%4==1时有f(p^c)=3*c+1
+        p%4!=1时f(p^c)=1
+        对于非质数有
+        f(a*b)=f(a)*f(b) gcd(a,b)==1
+    Solution:
+        处理g[n][r]表示前缀%4==r的质数个数，可以通过Min25预处理
+        设G[n]等于4*g[n][1]+g[n][3]，对于唯一素数2特殊处理，n>1时G[n]++
+        G[n]= F(x)_x为小于n的质数，G[pri[i-1]]= _{j=1}^{i-1}F(p_i)
+        套Min25得到f前缀和即可
+ */
+#include <bits/stdc++.h>
+typedef long long ll;
+const int N = 50000 << 1 | 1; // sqrt(n)*2
+int n, m, Sqr, pnum, pri[N >> 2], w[N];
+ll g[N][4], sp[N][4], G[N];
+inline int ID(int x) { return x <= Sqr ? x : m - n / x + 1; }
+int F(int p, int k) {
+  if (p % 4 == 1) return 3 * k + 1;
+  return 1;
+}
+bool notp[N];
+void sieve() {
+  memset(notp, 0, sizeof(notp));
+  notp[0] = notp[1] = 1;
+  pnum = 0;
+  for (int i = 2; i < N; i++) {
+    if (!notp[i]) {
+      pri[++pnum] = i;
+      for (int r = 0; r < 4; ++r)
+        sp[pnum][r] = sp[pnum - 1][r] + (i % 4 == r);
+    }
+    for (int j = 1; j <= pnum && pri[j] * i < N; j++) {
+      notp[pri[j] * i] = 1;
+      if (i % pri[j] == 0) break;
+    }
+  }
+}
+
+\end{lstlisting}
+
+\section{约瑟夫问题}
+
+\begin{lstlisting}
+/*
+   约瑟夫问题
+ */
+int Josephus(int n, int k) { // Number(0-n-1)
+  if (k == 1) return n - 1;
+  if (n == 1) return 0;
+  int ret;
+  if (n < k) {
+    ret = 0;
+    for (int i = 2; i <= n; i++) ret = (ret + k) % i;
+    return ret;
+  }
+  ret = Josephus(n - n / k, k);
+  if (ret < n % k)
+      ret = ret - n % k + n;
+  else
+    ret = ret - n % k + (ret - n % k) / (k - 1);
+  return ret;
+}
+
+\end{lstlisting}
+
+\section{分数类}
+
+\begin{lstlisting}
+/*
+   分数类
+ */
+const int N = 500;
+struct fraction {
+  long long numerator; // 分子
+  long long denominator; // 分母
+  fraction() {
+    numerator = 0;
+    denominator = 1;
+  }
+  fraction(long long num) {
+    numerator = num;
+    denominator = 1;
+  }
+  fraction(long long a, long long b) {
+    numerator = a;
+    denominator = b;
+    this->reduction();
+  }
+  void operator=(const long long num) {
+    numerator = num;
+    denominator = 1;
+    this->reduction();
+  }
+  void operator=(const fraction &b) {
+    numerator = b.numerator;
+    denominator = b.denominator;
+    this->reduction();
+  }
+  fraction operator+(const fraction &b) const {
+    long long gcdnum = __gcd(denominator, b.denominator);
+    fraction tmp = fraction(numerator * (b.denominator / gcdnum) +
+        b.numerator * (denominator / gcdnum),
+        denominator / gcdnum * b.denominator);
+    tmp.reduction();
+    return tmp;
+  }
+  fraction operator+(const int &b) const { return ((*this) + fraction(b)); }
+  fraction operator-(const fraction &b) const {
+    return ((*this) + fraction(-b.numerator, b.denominator));
+  }
+  fraction operator-(const int &b) const { return ((*this) - fraction(b)); }
+  fraction operator*(const fraction &b) const {
+    fraction tmp =
+      fraction(numerator * b.numerator, denominator * b.denominator);
+    tmp.reduction();
+    return tmp;
+  }
+  fraction operator*(const int &b) const { return ((*this) * fraction(b)); }
+  fraction operator/(const fraction &b) const {
+    return ((*this) * fraction(b.denominator, b.numerator));
+  }
+  void reduction() {
+    if (numerator == 0) {
+      denominator = 1;
+      return;
+    }
+    long long gcdnum = __gcd(numerator, denominator);
+    numerator /= gcdnum;
+    denominator /= gcdnum;
+  }
+  void print() {
+    if (denominator == 1)
+      printf("%lld\n", numerator);
+    else {
+      long long num = numerator / denominator;
+      long long tmp = num;
+      int len = 0;
+      while (tmp) {
+        len++;
+        tmp /= 10;
+      }
+      for (int i = 0; i < len; i++) printf(" ");
+      if (len != 0) printf(" ");
+      printf("%lld\n", numerator % denominator);
+      if (num != 0) printf("%lld ", num);
+      tmp = denominator;
+      while (tmp) {
+        printf("-");
+        tmp /= 10;
+      }
+      puts("");
+      for (int i = 0; i < len; i++) printf(" ");
+      if (len != 0) printf(" ");
+      printf("%lld\n", denominator);
+    }
+  }
+} f[N];
+int n;
+/*
+   要抽齐n种卡片期望要买的卡片数
+ */
+int main() {
+  while (~scanf("%d", &n)) {
+    f[0] = 0;
+    for (int i = 1; i <= n; i++) f[i] = f[i - 1] + fraction(1, i);
+    f[n] = f[n] * n;
+    f[n].print();
+  }
+  return 0;
+}
+
+\end{lstlisting}

@@ -1,0 +1,3204 @@
+\chapter{字符串}
+
+\section{Next函数}
+
+\begin{lstlisting}
+/*
+   nxt函数的应用
+ */
+int nxt[N];
+void get_nxt(int n, char* a) {
+  int i, j;
+  for (nxt[0] = j = -1, i = 1; i < n; nxt[i++] = j) {
+    while (~j && a[j + 1] != a[i]) j = nxt[j];
+    if (a[j + 1] == a[i]) j++;
+  }
+}
+/*
+   求补上最少字母数量使得这是个循环串
+ */
+int main() {
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%s", s);
+    get_nxt(len = strlen(s), s);
+    int L = len - (nxt[len - 1] + 1);
+    if (L < len && len % L == 0)
+      puts("0");
+    else
+      printf("%d\n", L - len % L);
+  }
+  return 0;
+}
+/*
+   求循环节数量
+ */
+int main() {
+  while (~scanf(" %s", &s)) {
+    if (s[0] == '.') break;
+    int n = strlen(s);
+    get_nxt(n, s);
+    printf("%d\n", n % (n - nxt[n - 1] - 1) ? 1 : n / (n - nxt[n - 1] - 1));
+  }
+  return 0;
+}
+/*
+   求同时是前缀和后缀的串长
+ */
+int main() {
+  while (~scanf(" %s", &s)) {
+    int cnt = 0;
+    get_nxt(s, nxt);
+    for (t = nxt[(n = strlen(s)) - 1]; t != -1; t = nxt[t]) {
+      if (s[t] == s[n - 1]) ans[cnt++] = t + 1;
+    }
+    for (int i = cnt - 1; i >= 0; i--) printf("%d ", ans[i]);
+    printf("%d\n", n);
+  }
+  return 0;
+}
+/*
+   求出每个循环节的数量和终点位置
+ */
+int main() {
+  while (~scanf("%d", &n) && n) {
+    printf("Test case #%d\n", ++cas);
+    scanf("%s", s);
+    get_nxt(strlen(s), s);
+    for (int i = 2; i <= n; i++) {
+      if (nxt[i - 1] != -1 && (i % (i - nxt[i - 1] - 1) == 0))
+        printf("%d %d\n", i, i / (i - nxt[i - 1] - 1));
+    }
+    puts("");
+  }
+  return 0;
+}
+/*
+   求第一个串的前缀和第二个串的后缀的最大匹配
+ */
+int main() {
+  while (~scanf("%s", s)) {
+    int L1 = strlen(s);
+    scanf("%s", s + L1);
+    int L = strlen(s), L2 = L - L1;
+    get_nxt(L, s);
+    for (k = nxt[L - 1]; k >= L1 || k >= L2; k = nxt[k])
+      ;
+    if (k == -1)
+      puts("0");
+    else {
+      for (int i = 0; i <= k; i++) printf("%c", s[i]);
+      printf(" %d\n", k + 1);
+    }
+  }
+  return 0;
+}
+/*
+   求字符串每个前缀和串匹配成功的次数和
+ */
+int main() {
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%d%s", &len, s);
+    get_nxt(len, s);
+    ans = 0;
+    for (int i = 0; i < len; i++) {
+      if (nxt[i] < 0)
+        dp[i] = 1;
+      else
+        dp[i] = (dp[nxt[i]] + 1) % mod;
+      ans = (ans + dp[i]) % mod;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{KMP}
+\begin{lstlisting}
+/*
+   KMP
+   计算a串在b串中的出现次数
+ */
+const int N = 1000005;
+int T, nxt[N], ans;
+char a[N], b[N];
+void kmp(int n, char* a, int m, char* b) {
+  int i, j;
+  for (nxt[0] = j = -1, i = 1; i < n; nxt[i++] = j) {
+    while (~j && a[j + 1] != a[i]) j = nxt[j];
+    if (a[j + 1] == a[i]) j++;
+  }
+  for (j = -1, i = 0; i < m; i++) {
+    while (~j && a[j + 1] != b[i]) j = nxt[j];
+    if (a[j + 1] == b[i]) j++;
+    if (j == n - 1) ans++, j = nxt[j];
+  }
+}
+int main() {
+  scanf("%d", &T);
+  while (T--) {
+    ans = 0;
+    scanf("%s %s", a, b);
+    kmp(strlen(a), a, strlen(b), b);
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{矩阵加速 KMP}
+\begin{lstlisting}
+/*
+   kmp+矩阵加速
+   求长度为n的不包含长度为m的子串的串个数
+ */
+#define rep(i, n) for (int i = 0; i < n; i++)
+using namespace std;
+int t, n, m, mod, a[25][25], b[25][25], tmp[25][25], p[25];
+char s[25];
+void mul(int a[25][25], int b[25][25], int ans[25][25]) {
+  rep(i, m) rep(j, m) {
+    tmp[i][j] = 0;
+    rep(k, m) tmp[i][j] = (tmp[i][j] + a[i][k] * b[k][j]) % mod;
+  }
+  rep(i, m) rep(j, m) ans[i][j] = tmp[i][j];
+}
+int main() {
+  scanf("%d%d%d", &n, &m, &mod);
+  scanf("%s", s + 1);
+  int j = 0;
+  for (int i = 2; i <= m; i++) {
+    while (j > 0 && s[j + 1] != s[i]) j = p[j];
+    if (s[j + 1] == s[i]) j++;
+    p[i] = j;
+  }
+  rep(i, m) rep(j, 10) {
+    for (t = i; t && s[t + 1] - '0' != j; t = p[t])
+      ;
+    if (s[t + 1] - '0' == j) t++;
+    if (t != m) b[i][t] = (b[i][t] + 1) % mod;
+  }
+  rep(i, m) a[i][i] = 1;
+  int sum = 0;
+  while (n) {
+    if (n & 1) mul(a, b, a);
+    mul(b, b, b);
+    n >>= 1;
+  }
+  for (int i = 0; i < m; i++) sum = (sum + a[0][i]) % mod;
+  return printf("%d\n", sum), 0;
+}
+\end{lstlisting}
+\section{压缩串 KMP}
+\begin{lstlisting}
+/*
+   压缩串KMP
+   求最长匹配
+ */
+pair<char, long long> s[200005], t[200005], tmp1, tmp2;
+int nxt[200005], n, m, cnt1, cnt2;
+long long ans, num;
+char c;
+void kmp(int n, pair<char, long long>* a, int m, pair<char, long long>* b) {
+  int i, j;
+  for (nxt[0] = j = -1, i = 1; i < n; nxt[i++] = j) {
+    while (~j && a[j + 1] != a[i]) j = nxt[j];
+    if (a[j + 1] == a[i]) j++;
+  }
+  for (j = -1, i = 0; i < m; i++) {
+    while (~j && a[j + 1] != b[i]) j = nxt[j];
+    if (a[j + 1] == b[i]) j++;
+    if (j == n - 1) {
+      if (i >= n && b[i + 1].first == tmp2.first &&
+          b[i + 1].second >= tmp2.second &&
+          b[i - n].first == tmp1.first && b[i - n].second >= tmp1.second)
+        ans++;
+      j = nxt[j];
+    }
+  }
+}
+int main() {
+  scanf("%d%d", &n, &m);
+  for (int i = 1; i <= n; i++) {
+    scanf(" %lld-%c", &num, &c);
+    if (s[cnt1].first == c)
+      s[cnt1].second += num;
+    else {
+      s[++cnt1].first = c;
+      s[cnt1].second = num;
+    }
+  }
+  for (int i = 1; i <= m; i++) {
+    scanf(" %lld-%c", &num, &c);
+    if (t[cnt2].first == c)
+      t[cnt2].second += num;
+    else {
+      t[++cnt2].first = c;
+      t[cnt2].second = num;
+    }
+  }
+  if (cnt2 >= 3) {
+    tmp1 = t[1];
+    tmp2 = t[cnt2];
+    kmp(cnt2 - 2, t + 2, cnt1, s + 1);
+  } else if (cnt2 == 1) {
+    for (int i = 1; i <= cnt1; i++)
+      if (t[cnt2].first == s[i].first && s[i].second >= t[cnt2].second) {
+        ans += (long long)(s[i].second - t[cnt2].second + 1);
+      }
+  } else if (cnt2 == 2) {
+    for (int i = 1; i < cnt1; i++)
+      if (t[1].first == s[i].first && t[2].first == s[i + 1].first &&
+          t[1].second <= s[i].second && t[2].second <= s[i + 1].second)
+        ans++;
+  }
+  return printf("%lld\n", ans), 0;
+}
+\end{lstlisting}
+\section{Exkmp}
+\begin{lstlisting}
+/*
+   扩展kmp
+   LCP表示T第i位往后和T原串的最长公共前缀
+   extend表示S的第i位往后和T的最长公共前缀
+ */
+namespace Exkmp {
+  const int N = 500010;
+  int len, LCP[N], ex1[N], ex2[N], a[N], s[N];
+  char S[N], T[N];
+  void getLCP(char *T) {
+    int i, len = strlen(T);
+    LCP[0] = len;
+    for (i = 0; i < len - 1 && T[i] == T[i + 1]; i++)
+      ;
+    LCP[1] = i;
+    int a = 1;
+    for (int k = 2; k < len; k++) {
+      int p = a + LCP[a] - 1, L = LCP[k - a];
+      if ((k - 1) + L >= p) {
+        int j = (p - k + 1) > 0 ? (p - k + 1) : 0;
+        while (k + j < len && T[k + j] == T[j]) j++;
+        LCP[k] = j, a = k;
+      } else
+        LCP[k] = L;
+    }
+  }
+  void exkmp(char *S, char *T, int *extend) {
+    memset(LCP, 0, sizeof(LCP));
+    getLCP(T);
+    int Slen = strlen(S), Tlen = strlen(T), a = 0;
+    int MinLen = Slen > Tlen ? Tlen : Slen;
+    while (a < MinLen && S[a] == T[a]) a++;
+    extend[0] = a, a = 0;
+    for (int k = 1; k < Slen; k++) {
+      int p = a + extend[a] - 1, L = LCP[k - a];
+      if ((k - 1) + L >= p) {
+        int j = (p - k + 1) > 0 ? (p - k + 1) : 0;
+        while (k + j < Slen && j < Tlen && S[k + j] == T[j]) j++;
+        extend[k] = j;
+        a = k;
+      } else
+        extend[k] = L;
+    }
+  }
+} // namespace Exkmp
+/*
+   Example1
+   一个字符串的价值定义为，当它是一个回文串的时候，
+   价值为每个字符的价值的和，如果不是回文串，价值为0，现在给出每种字符的价值。
+   给出一个字符串，要求将其划分为两个子串，要求两个子串的价值和最大。
+ */
+void revcpy(char *S, char *T, int len) {
+  memset(T, 0, sizeof(T));
+  for (int i = 0, k = len - 1; i < len; ++i, --k) T[i] = S[k];
+}
+int Cas;
+int main() {
+  using namespace Exkmp;
+  scanf("%d", &Cas);
+  while (Cas--) {
+    for (int i = 0; i < 26; i++) scanf("%d", &a[i]);
+    scanf("%s", S);
+    len = strlen(S);
+    for (int i = 0; S[i]; i++) s[i + 1] = s[i] + a[S[i] - 'a'];
+    revcpy(S, T, len);
+    exkmp(S, T, ex2);
+    exkmp(T, S, ex1);
+    int ans = -1e9;
+    for (int i = 0; i < len; i++) {
+      if (i && ex1[i] + i == len) { // S前缀是回文串
+        int j = ex1[i], tmp = s[j];
+        if (ex2[j] + j == len) tmp += s[len] - s[j]; // S后缀是回文串
+        if (tmp > ans) ans = tmp;
+      } else {
+        int j = i + 1, tmp = 0;
+        if (ex2[j] + j == len) tmp += s[len] - s[j];
+        if (tmp > ans) ans = tmp;
+      }
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+/*
+   Example2
+   给出一个数字，每次将其最后一位提到最前面来，问产生的所有数字中，
+   有多少比原数大，有多少比原数小，有多少和原数相等
+ */
+int main() {
+  int Cas;
+  scanf("%d", &Cas);
+  for (int cas = 1; cas <= Cas; cas++) {
+    int L = 0, E = 0, G = 0;
+    scanf("%s", S);
+    int len = strlen(S);
+    for (int i = 0; i < len; i++) S[len + i] = S[i];
+    S[len * 2] = '\0';
+    getLCP(S);
+    for (int i = 0; i < len; i++) {
+      if (LCP[i] >= len)
+        E++;
+      else if (S[LCP[i]] < S[LCP[i] + i])
+        G++;
+      else
+        L++;
+    }
+    printf("Case %d: %d %d %d\n", cas, L / E, E / E, G / E);
+  }
+  return 0;
+}
+\end{lstlisting}
+
+\section{K 串最长公共子串}
+\begin{lstlisting}
+/*
+   求k个串的最长公共子串
+   并输出字典序最小的一个
+ */
+const int N = 4050, M = 210;
+using namespace std;
+int nxt[M], n;
+char dict[N][M];
+void get_nxt(char *a, int n) {
+  int i, j;
+  for (nxt[0] = j = -1, i = 1; i < n; nxt[i++] = j) {
+    while (~j && a[j + 1] != a[i]) j = nxt[j];
+    if (a[j + 1] == a[i]) j++;
+  }
+}
+int LongestPre(char *s, int len) {
+  get_nxt(s, len);
+  for (int i = 1; i < n; i++) {
+    char *p = dict[i];
+    int ans = 0;
+    for (int j = -1; *p; p++) {
+      while (~j && s[j + 1] != *p) j = nxt[j];
+      if (s[j + 1] == *p) {
+        j++;
+        ans = max(ans, j + 1);
+      }
+      if (j == len - 1) j = nxt[j];
+    }
+    len = min(len, ans);
+  }
+  return len;
+}
+int main() {
+  while (scanf("%d", &n) && n) {
+    getchar();
+    for (int i = 0; i < n; i++) gets(dict[i]);
+    int len = strlen(dict[0]), ans = 0, pos = 0;
+    for (int i = 0; i < len; i++) {
+      int tmp = LongestPre(dict[0] + i, len - i);
+      if (tmp >= ans) {
+        if (tmp > ans)
+          ans = tmp, pos = i;
+        else {
+          bool flag = 1;
+          for (int t = 0; t < ans; t++) {
+            if (dict[0][pos + t] > dict[0][i + t])
+              break;
+            else if (dict[0][pos + t] < dict[0][i + t]) {
+              flag = 0;
+              break;
+            }
+          }
+          if (flag) pos = i;
+        }
+      }
+    }
+    if (ans) {
+      for (int i = 0; i < ans; i++) putchar(dict[0][pos + i]);
+      puts("");
+    } else
+      puts("IDENTITY LOST");
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{Trie}
+\begin{lstlisting}
+/*
+   Trie
+Trick: dfs序为符合前缀的所有串或者符合后缀的所有串
+ */
+struct Trie {
+  int tot, dfn, st[S], en[S], son[S][26], ansL, ansR;
+  int Tr(char c) { return c - 'a'; }
+  void Init() {
+    for (int i = 0; i <= tot; i++)
+      for (int j = 0; j < 26; j++) son[i][j] = 0;
+    dfn = tot = 0;
+  }
+  int insert(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = 0; i < l; i++) {
+      if (!son[x][Tr(s[i])]) son[x][Tr(s[i])] = ++tot;
+      x = son[x][Tr(s[i])];
+    }
+    return x;
+  }
+  void dfs(int x) {
+    st[x] = ++dfn;
+    for (int i = 0; i < 26; i++)
+      if (son[x][i]) dfs(son[x][i]);
+    en[x] = dfn;
+  }
+  void ask(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = 0; i < l; i++) {
+      if (!son[x][Tr(s[i])]) {
+        ansL = ansR = 0;
+        return;
+      }
+      x = son[x][Tr(s[i])];
+    }
+    ansL = st[x], ansR = en[x];
+  }
+};
+struct RevTrie {
+  int tot, dfn, st[S], en[S], son[S][26], ansL, ansR;
+  int Tr(char c) { return c - 'a'; }
+  void Init() {
+    for (int i = 0; i <= tot; i++)
+      for (int j = 0; j < 26; j++) son[i][j] = 0;
+    dfn = tot = 0;
+  }
+  int insert(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = l - 1; i >= 0; i--) {
+      if (!son[x][Tr(s[i])]) son[x][Tr(s[i])] = ++tot;
+      x = son[x][Tr(s[i])];
+    }
+    return x;
+  }
+  void dfs(int x) {
+    st[x] = ++dfn;
+    for (int i = 0; i < 26; i++)
+      if (son[x][i]) dfs(son[x][i]);
+    en[x] = dfn;
+  }
+  void ask(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = l - 1; i >= 0; i--) {
+      if (!son[x][Tr(s[i])]) {
+        ansL = ansR = 0;
+        return;
+      }
+      x = son[x][Tr(s[i])];
+    }
+    ansL = st[x], ansR = en[x];
+  }
+};
+\end{lstlisting}
+\section{链表版 Trie}
+\begin{lstlisting}
+/*
+   Trie树
+   链表版本，节省内存
+   选出一些字符串，使得字符串的最长公共前缀*字符串的总个数最大化
+ */
+const int S = 5000100;
+struct Trie {
+  int tot, cnt[S], ans, head[S], nxt[S], to[S], m;
+  char c[S];
+  void insert() {
+    char C = getchar();
+    for (int x = 0, i = 0; C != '\n'; i++, C = getchar()) {
+      int y = -1;
+      for (int e = head[x]; e; e = nxt[e])
+        if (c[e] == C) {
+          y = to[e];
+          break;
+        }
+      if (y < 0)
+        to[++m] = ++tot, c[m] = C, nxt[m] = head[x], head[x] = m,
+          y = tot;
+      cnt[x = y]++;
+      ans = max(ans, cnt[x] * (i + 1));
+    }
+  }
+} T;
+int n;
+int main() {
+  scanf("%d", &n);
+  getchar();
+  return 0;
+}
+\end{lstlisting}
+\section{AC 自动机}
+\begin{lstlisting}
+/*
+   AC自动机
+ */
+namespace AC_DFA {
+  const int Csize = 27; // 预留一位'z'+1作为分隔符
+  int tot, son[N][Csize], sum[N], fail[N], q[N], ans[N], dph[N], match[N];
+  void Initialize() {
+    memset(sum, 0, sizeof(int) * (tot + 1));
+    memset(dph, 0, sizeof(int) * (tot + 1));
+    memset(ans, 0, sizeof(int) * (tot + 1));
+    memset(match, 0, sizeof(int) * (tot + 1));
+    memset(fail, 0, sizeof(int) * (tot + 1));
+    for (int i = 0; i <= tot; i++)
+      for (int j = 0; j < Csize; j++) son[i][j] = 0;
+    tot = 0;
+    fail[0] = -1;
+  }
+  inline int Tr(char ch) { return ch - 'a'; }
+  int Insert(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = 0, w; i < l; i++) {
+      if (!son[x][w = Tr(s[i])]) {
+        son[x][w] = ++tot;
+        dph[tot] = i + 1;
+      }
+      x = son[x][w];
+    }
+    sum[x]++;
+    return x;
+  }
+  void MakeFail() {
+    int h = 1, t = 0, i, j, x = 0;
+    // 注意单个字符的处理
+    for (i = 0; i < Csize; i++)
+      if (son[0][i]) {
+        q[++t] = son[0][i];
+        match[son[0][i]] =
+          sum[son[0][i]] ? son[0][i] : match[fail[son[0][i]]];
+      }
+    while (h <= t)
+      for (x = q[h++], i = 0; i < Csize; i++)
+        if (son[x][i]) {
+          fail[son[x][i]] = son[fail[x]][i], q[++t] = son[x][i];
+          match[son[x][i]] =
+            sum[son[x][i]] ? son[x][i] : match[fail[son[x][i]]];
+        } else
+          son[x][i] = son[fail[x]][i];
+  }
+  /*
+     查询有多少串在模式串中出现
+     破坏性查询
+     sum置0防止被重复统计
+   */
+  int Query(char *s) {
+    int res = 0;
+    for (int l = strlen(s), x = 0, i = 0; i < l; i++) {
+      x = son[x][Tr(s[i])];
+      int t = x;
+      while (t) {
+        res += sum[t];
+        sum[t] = 0;
+        t = fail[t];
+      }
+    }
+    return res;
+  }
+  /*
+     在AC_DFA上统计每个串在多少个模式串中出现
+     注意最后答案需要累加到fail链的前继
+   */
+  void Search(char *s, int len) {
+    for (int l = strlen(s), i = 0, x = 0, w; i < l; i++) {
+      x = son[x][Tr(s[i])];
+      while (dph[x] > len) x = fail[x];
+      ans[match[x]]++;
+    }
+  }
+  int d[N], st[N];
+  void Solve() {
+    int k = 0;
+    memset(d, 0, sizeof(int) * (tot + 1));
+    for (int i = 1; i <= tot; i++) d[fail[i]]++;
+    for (int i = 1; i <= tot; i++)
+      if (!d[i]) st[k++] = i;
+    for (int i = 0; i < k; i++) {
+      int j = fail[st[i]];
+      ans[j] += ans[st[i]];
+      if (!--d[j]) st[k++] = j;
+    }
+  }
+  for (int i = 0; i < q; i++) pos[i] = Insert(t[i]); // 插入询问串
+  MakeFail();
+  for (int i = 0; i < n; i++) Search(s[i], len[i]); // 处理模式串
+  Solve();
+  for (int i = 0; i < q; i++) printf("%d\n", ans[pos[i]]);
+  /*
+     给出一些串，询问第x个串和第y个串的公共子串，
+     同时要求该公共子串为某个串的前缀。求最长符合要求的答案
+     我们对所有串构建AC自动机，将两个询问串之一在AC自动机上mark所有的匹配位置
+     另一个串在mark的地方寻找最长匹配即可
+   */
+  int Ans = 0;
+  void Cal(char *s) {
+    memset(vis, 0, sizeof(vis));
+    for (int l = strlen(s), i = 0, x = 0, w; i < l; i++) {
+      while (!son[x][Tr(s[i])]) x = fail[x];
+      x = son[x][Tr(s[i])];
+      for (int j = x; j; j = fail[j]) vis[j] = 1;
+    }
+  }
+  void Find(char *s) {
+    for (int l = strlen(s), i = 0, x = 0, w; i < l; i++) {
+      while (!son[x][Tr(s[i])]) x = fail[x];
+      x = son[x][Tr(s[i])];
+      for (int j = x; j; j = fail[j])
+        if (vis[j]) Ans = max(Ans, dph[j]);
+    }
+  }
+  void Solve() {
+    int x, y;
+    Ans = 0;
+    scanf("%d%d", &x, &y);
+    Cal(s[x]);
+    Find(s[y]);
+    printf("%d\n", Ans);
+  }
+} // namespace AC_DFA
+\end{lstlisting}
+\section{ AC 自动机 Fail 树应用}
+\begin{lstlisting}
+/*
+   题目大意：查询最长的是x串和y串的公共后缀，且至少是一个给定串集中串的前缀
+   求给定串集中有多少串满足前缀是他们的公共后缀
+   题解：对所有串建立AC自动机，那么若前缀i是前缀j的后缀，说明i是Fail树上j的祖先。
+   所以对于询问(x,y)，答案就是两点在Fail树上的LCA在原Trie中子树内的字符串总数。
+ */
+
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+using namespace std;
+const int N = 500010;
+namespace AC_DFA {
+  const int Csize = 27;
+  int tot, son[N][Csize], val[N], fail[N], q[N];
+  void Initialize() {
+    memset(fail, 0, sizeof(int) * (tot + 1));
+    memset(val, 0, sizeof(int) * (tot + 1));
+    for (int i = 0; i <= tot; i++)
+      for (int j = 0; j < Csize; j++) son[i][j] = 0;
+    tot = 0;
+    fail[0] = -1;
+  }
+  inline int Tr(char ch) { return ch - 'a'; }
+  int Insert(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = 0, w; i < l; i++) {
+      if (!son[x][w = Tr(s[i])]) son[x][w] = ++tot;
+      x = son[x][w];
+      val[x]++;
+    }
+    return x;
+  }
+  void MakeFail() {
+    int h = 1, t = 0, i, x = 0;
+    for (i = 0; i < Csize; i++)
+      if (son[0][i]) q[++t] = son[0][i];
+    while (h <= t)
+      for (x = q[h++], i = 0; i < Csize; i++)
+        if (son[x][i])
+          fail[son[x][i]] = son[fail[x]][i], q[++t] = son[x][i];
+        else
+          son[x][i] = son[fail[x]][i];
+  }
+} // namespace AC_DFA
+namespace Tree_Chain_Subdivision {
+  int ed, root, d[N], num[N], v[N << 1], vis[N], f[N], g[N << 1];
+  int nxt[N << 1], size[N], son[N], st[N], en[N], dfn, top[N];
+  void add_edge(int x, int y) {
+    v[++ed] = y;
+    nxt[ed] = g[x];
+    g[x] = ed;
+  }
+  void dfs(int x) {
+    size[x] = 1;
+    for (int i = g[x]; i; i = nxt[i])
+      if (v[i] != f[x]) {
+        f[v[i]] = x, d[v[i]] = d[x] + 1;
+        dfs(v[i]), size[x] += size[v[i]];
+        if (size[v[i]] > size[son[x]]) son[x] = v[i];
+      }
+  }
+  void dfs2(int x, int y) {
+    if (x == -1) return;
+    st[x] = ++dfn;
+    top[x] = y;
+    if (son[x]) dfs2(son[x], y);
+    for (int i = g[x]; i; i = nxt[i])
+      if (v[i] != son[x] && v[i] != f[x]) dfs2(v[i], v[i]);
+    en[x] = dfn;
+  }
+  int lca(int x, int y) {
+    for (; top[x] != top[y]; x = f[top[x]])
+      if (d[top[x]] < d[top[y]]) {
+        int z = x;
+        x = y;
+        y = z;
+      }
+    return d[x] < d[y] ? x : y;
+  }
+  void Initialize() {
+    memset(g, dfn = ed = 0, sizeof(g));
+    memset(v, 0, sizeof(v));
+    memset(nxt, 0, sizeof(nxt));
+    memset(son, -1, sizeof(son));
+  }
+} // namespace Tree_Chain_Subdivision
+int n, m, pos[N];
+char s[N];
+int ask(int x, int y) {
+  int lca = Tree_Chain_Subdivision::lca(pos[x], pos[y]);
+  return AC_DFA::val[lca];
+}
+int main() {
+  while (~scanf("%d", &n)) {
+    using namespace AC_DFA;
+    Initialize();
+    for (int i = 1; i <= n; i++) {
+      scanf("%s", s);
+      pos[i] = Insert(s);
+    }
+    MakeFail();
+    Tree_Chain_Subdivision::Initialize();
+    for (int i = 1; i <= tot; i++)
+      Tree_Chain_Subdivision::add_edge(fail[i], i);
+    Tree_Chain_Subdivision::dfs(0);
+    Tree_Chain_Subdivision::dfs2(0, 0);
+    scanf("%d", &m);
+    while (m--) {
+      int x, y;
+      scanf("%d%d", &x, &y);
+      int ans = ask(x, y);
+      if (!ans)
+        puts("N");
+      else
+        printf("%d\n", ans);
+    }
+  }
+  return 0;
+}
+/*
+   题目大意：给出一个打印的过程，'a'-'z'表示输入字母，P表示打印该字符串
+   B表示删去一个字符。问第x个打印的字符串在第y个打印的字符串中出现的次数
+   题解：我们根据打印的过程建立trie树，
+   当x是y的子串当且仅当y到根的链上有fail指针指向x的结尾，
+   而x在y中的出现次数则取决于有几个这样的指针，
+   我们根据fail指针建立fail树，按照fail树的dfs序进行统计，
+   在每个y处记录其要查询的x，在y点用树状数组对x点求dfs序区间和即可。
+ */
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <vector>
+using namespace std;
+const int N = 100010;
+int dfn, l[N], r[N], ans[N];
+vector<int> v[N], Q[N], ID[N];
+namespace BIT {
+  int c[N << 1]; // dfs
+  void Initialize() { memset(c, 0, sizeof(c)); }
+  void add(int x, int v) {
+    while (x <= dfn) c[x] += v, x += x & -x;
+  }
+  int query(int x) {
+    int res = 0;
+    while (x) res += c[x], x -= x & -x;
+    return res;
+  }
+} // namespace BIT
+namespace AC_DFA {
+  const int Csize = 26;
+  int id, tot, son[N][Csize], sum[N], f[N], fail[N], q[N], pos[N], match[N];
+  void Initialize() {
+    memset(sum, 0, sizeof(int) * (tot + 1));
+    memset(fail, 0, sizeof(int) * (tot + 1));
+    for (int i = 0; i <= tot; i++)
+      for (int j = 0; j < Csize; j++) son[i][j] = 0;
+    tot = 0;
+    id = 0;
+    fail[0] = -1;
+  }
+  inline int Tr(char ch) { return ch - 'a'; }
+  void Build(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = 0, w; i < l; i++) {
+      if (s[i] == 'P')
+        pos[++id] = x;
+      else if (s[i] == 'B')
+        x = f[x];
+      else {
+        if (!son[x][w = Tr(s[i])]) {
+          son[x][w] = ++tot;
+          f[tot] = x;
+        }
+        x = son[x][w];
+      }
+    }
+  }
+  void MakeFail() {
+    int h = 1, t = 0, i, j, x = 0;
+    for (i = 0; i < Csize; i++)
+      if (son[0][i]) q[++t] = son[0][i];
+    while (h <= t)
+      for (x = q[h++], i = 0; i < Csize; i++)
+        if (son[x][i]) {
+          fail[son[x][i]] = son[fail[x]][i], q[++t] = son[x][i];
+        } else
+          son[x][i] = son[fail[x]][i];
+  }
+  void Solve(char *s) {
+    using namespace BIT;
+    BIT::Initialize();
+    int x = 0, id = 0;
+    add(l[0], 1);
+    for (int L = strlen(s), i = 0; i < L; i++) {
+      if (s[i] == 'P') {
+        id++;
+        int u = pos[Q[id][k]];
+        ans[ID[id][k]] = query(r[u]) - query(l[u] - 1);
+      }
+    } else if (s[i] == 'B')
+      add(l[x], -1), x = f[x];
+    else
+      x = son[x][Tr(s[i])], add(l[x], 1);
+  }
+}
+} // namespace AC_DFA
+void Dfs(int x) {
+  l[x] = ++dfn;
+  r[x] = ++dfn;
+}
+char s[N];
+int main() {
+  using namespace AC_DFA;
+  Initialize();
+  scanf("%s", s);
+  Build(s);
+  MakeFail();
+  int m, x, y;
+  scanf("%d", &m);
+  for (int i = 1; i <= m; i++) {
+    scanf("%d%d", &x, &y);
+  }
+  Dfs(0);
+  Solve(s);
+  for (int i = 1; i <= m; i++) printf("%d\n", ans[i]);
+  return 0;
+}
+\end{lstlisting}
+\section{ AC 自动机 + 矩阵}
+\begin{lstlisting}
+/*
+   求长度为n的不包含任何给出字符串的串数量
+ */
+#include <cstdio>
+#include <cstring>
+using namespace std;
+const int N = 110;
+typedef long long LL;
+LL P = 100000LL;
+struct mat {
+  int n;
+  LL num[110][110];
+  void init0(int t) {
+    n = t;
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++) num[i][j] = 0;
+  }
+  void init1(int t) {
+    n = t;
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++)
+        if (i != j)
+          num[i][j] = 0;
+        else
+          num[i][j] = 1;
+  }
+  mat operator=(const struct mat p) {
+    for (int i = 0; i < n; i++)
+  }
+  mat operator*(const struct mat p) const {
+    struct mat ans;
+    for (int i = 0; i < n; i++)
+      for (int j = 0; j < n; j++)
+        for (int k = 0; k < n; k++)
+          return ans;
+  }
+  mat operator^(int t) const {
+    struct mat ans, now;
+    for (int i = 0; i < n; i++)
+      while (t > 0) {
+        if (t & 1) ans = ans * now;
+        now = now * now;
+        t >>= 1;
+      }
+    return ans;
+  }
+} mat;
+namespace AC_DFA {
+  const int Csize = 4;
+  int tot, son[N][Csize], sum[N], fail[N], q[N], ans[N], match[N];
+  void Initialize() {
+    memset(sum, 0, sizeof(int) * (tot + 1));
+    memset(ans, 0, sizeof(int) * (tot + 1));
+    memset(match, 0, sizeof(int) * (tot + 1));
+    memset(fail, 0, sizeof(int) * (tot + 1));
+    for (int i = 0; i <= tot; i++)
+      for (int j = 0; j < Csize; j++) son[i][j] = 0;
+    tot = 0;
+    fail[0] = -1;
+  }
+  inline int Tr(char ch) {
+    if (ch == 'A') return 0;
+    if (ch == 'T') return 1;
+    if (ch == 'C') return 2;
+    if (ch == 'G') return 3;
+  }
+  int Insert(char *s) {
+    int x = 0;
+    for (int l = strlen(s), i = 0, w; i < l; i++) {
+      if (!son[x][w = Tr(s[i])]) {
+        son[x][w] = ++tot;
+      }
+      x = son[x][w];
+    }
+    sum[x]++;
+    return x;
+  }
+  void MakeFail() {
+    int h = 1, t = 0, i, j, x = 0;
+    for (i = 0; i < Csize; i++)
+      if (son[0][i]) {
+        q[++t] = son[0][i];
+        match[son[0][i]] =
+          sum[son[0][i]] ? son[0][i] : match[fail[son[0][i]]];
+      }
+    while (h <= t)
+      for (x = q[h++], i = 0; i < Csize; i++)
+        if (son[x][i]) {
+          fail[son[x][i]] = son[fail[x]][i], q[++t] = son[x][i];
+          match[son[x][i]] =
+            sum[son[x][i]] ? son[x][i] : match[fail[son[x][i]]];
+        } else
+          son[x][i] = son[fail[x]][i];
+  }
+} // namespace AC_DFA
+using namespace AC_DFA;
+char s[20];
+void BuildMat() {
+  for (int i = 0; i <= tot; i++) {
+    if (match[i]) continue;
+    for (int j = 0; j < Csize; j++) {
+    }
+  }
+}
+int n, m;
+int main() {
+  while (~scanf("%d%d", &m, &n)) {
+    Initialize();
+    while (m--) {
+      scanf("%s", s);
+      Insert(s);
+    }
+    MakeFail();
+    BuildMat();
+    mat = mat ^ n;
+    int ans = 0;
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ 后缀数组 SA}
+\begin{lstlisting}
+/*
+   SA求后缀数组
+   复杂度O(nlogn)
+ */
+#define inf 1000000000
+using namespace std;
+typedef long long ll;
+const int N = 100010;
+int n, m, Log[N];
+char S[N];
+struct SA {
+  int p, q, k;
+  int sa[2][N], rk[2][N], mn[17][N];
+  int a[N], h[N], v[N];
+  ll s[N];
+  SA() { p = 0, q = 1; }
+  void mul(int *sa, int *rk, int *SA, int *RK) {
+    for (int i = 1; i <= n; i++) v[rk[sa[i]]] = i;
+    for (int i = n; i; i--)
+      if (sa[i] > k) SA[v[rk[sa[i] - k]]--] = sa[i] - k;
+    for (int i = n - k + 1; i <= n; i++) SA[v[rk[i]]--] = i;
+    for (int i = 1; i <= n; i++)
+      RK[SA[i]] = RK[SA[i - 1]] + (rk[SA[i - 1]] != rk[SA[i]] ||
+          rk[SA[i - 1] + k] != rk[SA[i] + k]);
+  }
+  void getsa() {
+    for (int i = 1; i <= n; i++) v[a[i]]++;
+    for (int i = 1; i <= 30; i++) v[i] += v[i - 1];
+    for (int i = 1; i <= n; i++) sa[p][v[a[i]]--] = i;
+    for (int i = 1; i <= n; i++)
+      rk[p][sa[p][i]] =
+        rk[p][sa[p][i - 1]] + (a[sa[p][i]] != a[sa[p][i - 1]]);
+    for (k = 1; k < n; k <<= 1, swap(p, q)) mul(sa[p], rk[p], sa[q], rk[q]);
+    for (int k = 0, i = 1; i <= n; i++) {
+      int j = sa[p][rk[p][i] - 1];
+      while (a[i + k] == a[j + k]) k++;
+      h[rk[p][i]] = k;
+      if (k) k--;
+    }
+  }
+  void pre() {
+    for (int i = 1; i <= n; i++) a[i] = S[i] - 'a' + 1;
+    getsa();
+    for (int i = 1; i <= n; i++) mn[0][i] = h[i];
+    for (int i = 1; i <= Log[n]; i++)
+      for (int j = 1; j + (1 << i) - 1 <= n; j++) {
+        mn[i][j] = min(mn[i - 1][j], mn[i - 1][j + (1 << (i - 1))]);
+      }
+    for (int i = 1; i <= n; i++) s[i] = s[i - 1] + n - sa[p][i] + 1 - h[i];
+  }
+  int query(int a, int b) {
+    a = rk[p][a], b = rk[p][b];
+    if (a > b) swap(a, b);
+    a++;
+    int t = Log[b - a + 1];
+    return min(mn[t][a], mn[t][b - (1 << t) + 1]);
+  }
+  void print() {
+    for (int i = 2; i <= n; i++) printf("%d ", h[i]);
+  }
+} A, B;
+/*
+   Example
+   将一个字符串的子串去重后排序
+   给出一个字符串的两个子串的在其子串序列中的排名
+   求这两个子串公共前后缀的长度平方和
+ */
+int main() {
+  Log[0] = -1;
+  for (int i = 1; i <= 100000; i++) Log[i] = Log[i >> 1] + 1;
+  scanf("%d%d", &n, &m);
+  scanf("%s", S + 1);
+  reverse(S + 1, S + n + 1);
+  for (int i = 1; i <= m; i++) {
+    ll l, r, ans = 0, id, a1, a2, b1, b2;
+    scanf("%lld%lld", &l, &r);
+    puts("-1");
+    continue;
+  }
+  t = min(t, min(b1 - a1 + 1, b2 - a2 + 1));
+  ans += t * t;
+  t = min(t, min(b1 - a1 + 1, b2 - a2 + 1));
+  ans += t * t;
+  printf("%lld\n", ans);
+}
+return 0;
+}
+\end{lstlisting}
+\section{ 后缀数组 DC3}
+\begin{lstlisting}
+/*
+   DC3
+   复杂度O(n)
+   rk：该位置[0~len-1]的后缀排名
+   sa：对应排名在原串[0~len-1]中的位置
+   ht：排名相邻的后缀最长公共前缀[2~len]
+ */
+#define F(x) ((x) / 3 + ((x) % 3 == 1 ? 0 : ty))
+#define G(x) ((x) < ty ? (x)*3 + 1 : ((x)-ty) * 3 + 2)
+using namespace std;
+const int N = 20100;
+template <typename T = int> // 应用时直接将T赋值为需要的类型速度比较快
+struct SA {
+  int str[N * 3], sa[N * 3], rk[N], ht[N], sz;
+  int wa[N], wb[N], wv[N], ws[N];
+  int &operator[](int k) { return sa[k]; }
+  int size() const { return sz; }
+  bool eq(const int *r, int a, int b) const {
+    return r[a] == r[b] && r[a + 1] == r[b + 1] && r[a + 2] == r[b + 2];
+  }
+  bool cmp(const int *r, int a, int b, int d) const {
+    if (d == 1)
+      return (r[a] < r[b]) || (r[a] == r[b] && wv[a + 1] < wv[b + 1]);
+    return (r[a] < r[b]) || (r[a] == r[b] && cmp(r, a + 1, b + 1, 1));
+  }
+  void rsort(const int *r, const int *a, int *b, int n, int m) {
+    int i;
+    fill(ws, ws + m, 0);
+    for (i = 0; i < n; i++) ++ws[wv[i] = r[a[i]]];
+    for (i = 1; i < m; i++) ws[i] += ws[i - 1];
+    for (i = n - 1; ~i; i--) b[--ws[wv[i]]] = a[i];
+  }
+  void dc3(int *r, int *sa, int n, int m) {
+    int i, j, k, *rn = r + n, *san = sa + n, tx = 0, ty = (n + 1) / 3,
+        tz = 0;
+    r[n] = r[n + 1] = 0;
+    for (i = 0; i < n; i++) {
+      if (i % 3) wa[tz++] = i;
+    }
+    rsort(r + 2, wa, wb, tz, m);
+    rsort(r + 1, wb, wa, tz, m);
+    rsort(r, wa, wb, tz, m);
+    for (rn[F(wb[0])] = 0, k = i = 1; i < tz; i++) {
+      rn[F(wb[i])] = eq(r, wb[i - 1], wb[i]) ? k - 1 : k++;
+    }
+    if (k < tz)
+      dc3(rn, san, tz, k);
+    else {
+      for (i = 0; i < tz; i++) san[rn[i]] = i;
+    }
+    for (i = 0; i < tz; i++) {
+      if (san[i] < ty) wb[tx++] = san[i] * 3;
+    }
+    if (n % 3 == 1) wb[tx++] = n - 1;
+    rsort(r, wb, wa, tx, m);
+    for (i = 0; i < tz; i++) wv[wb[i] = G(san[i])] = i;
+    for (i = j = k = 0; i < tx && j < tz; k++) {
+      sa[k] = cmp(r, wa[i], wb[j], wb[j] % 3) ? wa[i++] : wb[j++];
+    }
+    for (; i < tx; i++) sa[k++] = wa[i];
+    for (; j < tz; j++) sa[k++] = wb[j];
+  }
+  void build(const T *s, int n, int m = 128) {
+    int i;
+    for (i = 0; i < n; i++) str[i] = (int)s[i];
+    str[n] = 0;
+    sz = n + 1;
+    dc3(str, sa, sz, m);
+  }
+  void CalHeight() {
+    int i, j, k = 0;
+    for (i = 0; i < sz; i++) rk[sa[i]] = i;
+    for (i = 0; i < sz; ht[rk[i++]] = k) {
+      for (k ? --k : 0, j = sa[rk[i] - 1]; str[i + k] == str[j + k]; k++)
+        ;
+    }
+  }
+};
+/*
+   Example
+   求最长可允许重叠的出现次数不小于k的子串
+ */
+SA<int> Sa;
+int n, s[N];
+int k;
+bool check(int x) {
+  int num = 0;
+  for (int i = 1; i <= n; i++) {
+    num++;
+    else
+      num = 1;
+    if (num >= k) return 1;
+  }
+  return 0;
+}
+int main() {
+  while (~scanf("%d%d", &n, &k)) {
+    for (int i = 0; i < n; i++) scanf("%d", &s[i]);
+    s[n] = 0;
+    int l = 0, r = n, ans = 0;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (check(mid))
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ 诱导排序 SA}
+\begin{lstlisting}
+/*
+   诱导排序SA
+   复杂度O(n)
+   rk：该位置[0~len-1]的后缀排名
+   sa：对应排名在原串[0~len-1]中的位置
+   ht：排名相邻的后缀最长公共前缀[2~len]
+ */
+const int N = 100010;
+namespace SA {
+  int sa[N], rk[N], ht[N], s[N << 1], t[N << 1], p[N], cnt[N], cur[N];
+#define pushS(x) sa[cur[s[x]]--] = x
+#define pushL(x) sa[cur[s[x]]++] = x
+#define inducedSort(v) \
+  fill_n(sa, n, -1); \
+  fill_n(cnt, m, 0); \
+  for (int i = 0; i < n; i++) cnt[s[i]]++; \
+  for (int i = 1; i < m; i++) cnt[i] += cnt[i - 1]; \
+  for (int i = 0; i < m; i++) cur[i] = cnt[i] - 1; \
+  for (int i = n1 - 1; ~i; i--) pushS(v[i]); \
+  for (int i = 1; i < m; i++) cur[i] = cnt[i - 1]; \
+  for (int i = 0; i < n; i++) \
+  if (sa[i] > 0 && t[sa[i] - 1]) pushL(sa[i] - 1); \
+  for (int i = 0; i < m; i++) cur[i] = cnt[i] - 1; \
+  for (int i = n - 1; ~i; i--) \
+  if (sa[i] > 0 && !t[sa[i] - 1]) pushS(sa[i] - 1)
+  void sais(int n, int m, int *s, int *t, int *p) {
+    int n1 = t[n - 1] = 0, ch = rk[0] = -1, *s1 = s + n;
+    for (int i = n - 2; ~i; i--)
+      t[i] = s[i] == s[i + 1] ? t[i + 1] : s[i] > s[i + 1];
+    for (int i = 1; i < n; i++)
+      rk[i] = t[i - 1] && !t[i] ? (p[n1] = i, n1++) : -1;
+    inducedSort(p);
+    for (int i = 0, x, y; i < n; i++)
+      if (~(x = rk[sa[i]])) {
+        if (ch < 1 || p[x + 1] - p[x] != p[y + 1] - p[y])
+          ch++;
+        else
+          for (int j = p[x], k = p[y]; j <= p[x + 1]; j++, k++)
+            if ((s[j] << 1 | t[j]) != (s[k] << 1 | t[k])) {
+              ch++;
+              break;
+            }
+        s1[y = x] = ch;
+      }
+    if (ch + 1 < n1)
+      sais(n1, ch + 1, s1, t + n, p + n1);
+    else
+      for (int i = 0; i < n1; i++) sa[s1[i]] = i;
+    for (int i = 0; i < n1; i++) s1[i] = p[sa[i]];
+    inducedSort(s1);
+  }
+  template <typename T>
+    int mapCharToInt(int n, const T *str) {
+      int m = *max_element(str, str + n);
+      fill_n(rk, m + 1, 0);
+      for (int i = 0; i < n; i++) rk[str[i]] = 1;
+      for (int i = 0; i < m; i++) rk[i + 1] += rk[i];
+      for (int i = 0; i < n; i++) s[i] = rk[str[i]] - 1;
+      return rk[m];
+    }
+  // 最后一位添加符一定要保证是字典序最小的字符
+  template <typename T>
+    void suffixArray(int n, const T *str) {
+      int m = mapCharToInt(++n, str);
+      sais(n, m, s, t, p);
+      for (int i = 0; i < n; i++) rk[sa[i]] = i;
+      for (int i = 0, h = ht[0] = 0; i < n - 1; i++) {
+        int j = sa[rk[i] - 1];
+        while (i + h < n && j + h < n && s[i + h] == s[j + h]) h++;
+        if (ht[rk[i]] = h) h--;
+      }
+    }
+}; // namespace SA
+int n;
+char s[100010];
+// Test
+int main() {
+  scanf("%s", s);
+  n = strlen(s);
+  s[n] = 'a' - 1;
+  SA::suffixArray(n, s);
+  for (int i = 1; i <= n; i++)
+    printf(i == n ? "%d\n" : "%d ", SA::sa[i] + 1); // 输出在原串中的位置
+  for (int i = 2; i <= n; i++)
+    printf(i == n ? "%d\n" : "%d ",
+        SA::ht[i]); // 排名相邻的后缀的最长公共前缀
+  return 0;
+}
+/*
+   Example1
+   求最长可允许重叠的出现次数不小于k的子串
+ */
+int n, s[N];
+int k;
+bool check(int x) {
+  int num = 0;
+  for (int i = 1; i <= n; i++) {
+    if (SA::ht[i] >= x)
+      num++;
+    else
+      num = 1;
+    if (num >= k) return 1;
+  }
+  return 0;
+}
+int main() {
+  while (~scanf("%d%d", &n, &k)) {
+    for (int i = 0; i < n; i++) scanf("%d", &s[i]);
+    s[n] = 0;
+    SA::suffixArray(n, s);
+    int l = 0, r = n, ans = 0;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (check(mid))
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+/*
+   Example2
+   求最长不允许重叠的出现次数大于1的子串
+   示例为差分数组求解(升降调视为相同旋律)
+ */
+vector<int> v[N];
+bool check(int x) {
+  int cnt = -1;
+  for (int i = 1; i <= n; i++) {
+  }
+  for (int i = 0; i <= cnt; i++) {
+    int L = N, R = -1;
+    R = max(R, SA::sa[v[i][j]]);
+    L = min(L, SA::sa[v[i][j]]);
+  }
+  if (R - L >= x) return 1;
+}
+}
+return 0;
+}
+int main() {
+  while (scanf("%d", &n), n) {
+    for (int i = 0; i < n; i++) scanf("%d", &s[i]);
+    for (int i = 0; i < n - 1; i++) s[i] = s[i + 1] - s[i] + 90;
+    s[--n] = 0;
+    SA::suffixArray(n, s);
+    int l = 0, r = n, ans = 0;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (check(mid))
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    printf("%d\n", ans >= 4 ? ans + 1 : 0);
+  }
+  return 0;
+}
+/*
+   Example3
+   求至少在k个字符串中出现的最长公共子串
+ */
+int first = 0, len[N], u, K;
+vector<int> S[N];
+bool vis[N];
+bool check(int L) {
+  int cur = -1;
+  for (int i = 1; i <= u; i++) {
+  }
+  for (int i = 0; i <= cur; i++) {
+    memset(vis, 0, sizeof(vis));
+    int k = S[i][j];
+    int x = upper_bound(a, a + n + 1, sa[S[i][j]]) - a - 1;
+    vis[x] = 1;
+  }
+  int count = 0;
+  for (int j = 0; j < n; j++)
+    if (vis[j]) count++;
+  if (count > K) return 1;
+}
+}
+return 0;
+}
+void Print(int L) {
+  int cur = -1;
+  for (int i = 1; i <= u; i++) {
+  }
+  for (int i = 0; i <= cur; i++) {
+    memset(vis, 0, sizeof(vis));
+    int k = S[i][j];
+    int x = upper_bound(a, a + n + 1, SA::sa[S[i][j]]) - a - 1;
+    vis[x] = true;
+  }
+  int count = 0;
+  for (int j = 0; j < n; j++)
+    if (vis[j]) count++;
+  if (count > K) {
+    for (int j = 0; j < L; j++)
+      printf("%c", char(s[SA::sa[S[i][0]] + j]));
+    puts("");
+  }
+}
+}
+}
+int main() {
+  while (~scanf("%d", &n), n) {
+    if (first++) puts("");
+    int tmp = 200;
+    u = 0;
+    for (int i = 0; i < n; i++) {
+      scanf("%s", str);
+      len[i] = strlen(str);
+      for (int j = 0; j < len[i]; j++) s[u++] = (int)str[j];
+      s[u++] = tmp++;
+    }
+    tmp = 0;
+    s[u] = 0;
+    for (int i = 0; i <= n; i++) {
+      a[i] = tmp;
+      if (i < n) tmp = tmp + (i == 0 ? len[i] : len[i] + 1);
+    }
+    SA::suffixArray(u, s);
+    int l = 1, r = 1000, ans = 0;
+    K = n / 2; // 求至少在一半字符串中出现的最长公共子串
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (check(mid))
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    if (ans == 0)
+      puts("?");
+    else
+      Print(ans);
+  }
+  return 0;
+}
+/*
+   Example4
+   求在每个字符串中出现至少两次的最长的子串
+ */
+int first = 0, len[N], u, K;
+vector<int> S[N];
+int Min[15], Max[15];
+bool check(int L) {
+  int cur = -1;
+  for (int i = 1; i <= u; i++) {
+  }
+  for (int i = 0; i <= cur; i++) {
+    memset(Min, -1, sizeof(Min));
+    memset(Max, -1, sizeof(Max));
+    int k = S[i][j];
+    int x = upper_bound(a, a + n + 1, SA::sa[k]) - a - 1;
+    Min[x] = Min[x] == -1 ? sa[k] : min(Min[x], SA::sa[k]);
+    Max[x] = Max[x] == -1 ? sa[k] : max(Max[x], SA::sa[k]);
+  }
+  bool flag = 1;
+  for (int i = 0; i < n; i++) {
+    if (Min[i] == -1 || Max[i] - Min[i] < L) {
+      flag = 0;
+      break;
+    }
+  }
+  if (flag) return 1;
+}
+}
+return 0;
+}
+int T;
+int main() {
+  scanf("%d", &T);
+  while (T--) {
+    scanf("%d", &n);
+    int tmp = 200;
+    u = 0;
+    for (int i = 0; i < n; i++) {
+      scanf("%s", str);
+      len[i] = strlen(str);
+      for (int j = 0; j < len[i]; j++) s[u++] = (int)str[j];
+      s[u++] = tmp++;
+    }
+    tmp = 0;
+    s[u] = 0;
+    for (int i = 0; i <= n; i++) {
+      a[i] = tmp;
+      if (i < n) tmp = tmp + (i == 0 ? len[i] : len[i] + 1);
+    }
+    SA::suffixArray(u, s);
+    int l = 1, r = 10000, ans = 0;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (check(mid))
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ 诱导排序 SA+ST 表}
+\begin{lstlisting}
+/*
+   SAIS+ST_Table
+   给定n个字符串，输出第x串跟第y串的最长公共前缀
+   SA的ST判断的时候注意相同位置后缀判断会出错，要特判
+ */
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+using namespace std;
+const int N = 4000010;
+namespace SA {
+  int sa[N], rk[N], ht[N], s[N << 1], t[N << 1], p[N], cnt[N], cur[N];
+#define pushS(x) sa[cur[s[x]]--] = x
+#define pushL(x) sa[cur[s[x]]++] = x
+#define inducedSort(v) \
+  fill_n(sa, n, -1); \
+  fill_n(cnt, m, 0); \
+  for (int i = 0; i < n; i++) cnt[s[i]]++; \
+  for (int i = 1; i < m; i++) cnt[i] += cnt[i - 1]; \
+  for (int i = 0; i < m; i++) cur[i] = cnt[i] - 1; \
+  for (int i = n1 - 1; ~i; i--) pushS(v[i]); \
+  for (int i = 1; i < m; i++) cur[i] = cnt[i - 1]; \
+  for (int i = 0; i < n; i++) \
+  if (sa[i] > 0 && t[sa[i] - 1]) pushL(sa[i] - 1); \
+  for (int i = 0; i < m; i++) cur[i] = cnt[i] - 1; \
+  for (int i = n - 1; ~i; i--) \
+  if (sa[i] > 0 && !t[sa[i] - 1]) pushS(sa[i] - 1)
+  void sais(int n, int m, int *s, int *t, int *p) {
+    int n1 = t[n - 1] = 0, ch = rk[0] = -1, *s1 = s + n;
+    for (int i = n - 2; ~i; i--)
+      t[i] = s[i] == s[i + 1] ? t[i + 1] : s[i] > s[i + 1];
+    for (int i = 1; i < n; i++)
+      rk[i] = t[i - 1] && !t[i] ? (p[n1] = i, n1++) : -1;
+    inducedSort(p);
+    for (int i = 0, x, y; i < n; i++)
+      if (~(x = rk[sa[i]])) {
+        if (ch < 1 || p[x + 1] - p[x] != p[y + 1] - p[y])
+          ch++;
+        else
+          for (int j = p[x], k = p[y]; j <= p[x + 1]; j++, k++)
+            if ((s[j] << 1 | t[j]) != (s[k] << 1 | t[k])) {
+              ch++;
+              break;
+            }
+        s1[y = x] = ch;
+      }
+    if (ch + 1 < n1)
+      sais(n1, ch + 1, s1, t + n, p + n1);
+    else
+      for (int i = 0; i < n1; i++) sa[s1[i]] = i;
+    for (int i = 0; i < n1; i++) s1[i] = p[sa[i]];
+    inducedSort(s1);
+  }
+  template <typename T>
+    int mapCharToInt(int n, const T *str) {
+      int m = *max_element(str, str + n);
+      fill_n(rk, m + 1, 0);
+      for (int i = 0; i < n; i++) rk[str[i]] = 1;
+      for (int i = 0; i < m; i++) rk[i + 1] += rk[i];
+      for (int i = 0; i < n; i++) s[i] = rk[str[i]] - 1;
+      return rk[m];
+    }
+  // 最后一位添加符一定要保证是字典序最小的字符
+  template <typename T>
+    void suffixArray(int n, const T *str) {
+      int m = mapCharToInt(++n, str);
+      sais(n, m, s, t, p);
+      for (int i = 0; i < n; i++) rk[sa[i]] = i;
+      for (int i = 0, h = ht[0] = 0; i < n - 1; i++) {
+        int j = sa[rk[i] - 1];
+        while (i + h < n && j + h < n && s[i + h] == s[j + h]) h++;
+        if (ht[rk[i]] = h) h--;
+      }
+    }
+}; // namespace SA
+namespace ST {
+  int f[N][30], lg2[N];
+  void Init(int n) {
+    for (int i = 2; i <= n; i++) lg2[i] = lg2[i / 2] + 1;
+    for (int i = 1; i <= n; i++) f[i][0] = SA::ht[i];
+    for (int j = 1; (1 << j) <= n; j++)
+      for (int i = 1; i + (1 << j) - 1 <= n; i++)
+        f[i][j] = min(f[i][j - 1], f[i + (1 << (j - 1))][j - 1]);
+  }
+  int Min(int l, int r) {
+    if (l > r) swap(l, r);
+    l++;
+    int k = lg2[r - l + 1];
+    return min(f[l][k], f[r - (1 << k) + 1][k]);
+  }
+}; // namespace ST
+int T, n, len[N], pos[N];
+char t[N], s[N];
+int main() {
+  scanf("%d", &T);
+  for (int cas = 1; cas <= T; cas++) {
+    printf("Case %d:\n", cas);
+    scanf("%d", &n);
+    int u = 0;
+    for (int i = 1; i <= n; i++) {
+      scanf("%s", &t);
+      len[i] = strlen(t);
+      pos[i] = u;
+      for (int j = 0; j < len[i]; j++) s[u++] = t[j];
+    }
+    s[u] = 'a' - 1;
+    SA::suffixArray(u, s);
+    ST::Init(u);
+    int q;
+    scanf("%d", &q);
+    while (q--) {
+      int x, y;
+      scanf("%d%d", &x, &y);
+      int ans = min(len[x], len[y]);
+      if (x == y)
+        printf("%d\n", len[x]);
+      else
+        printf("%d\n",
+            min(ans, ST::Min(SA::rk[pos[x]], SA::rk[pos[y]])));
+    }
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ 后缀自动机}
+\begin{lstlisting}
+/*
+   后缀自动机
+   时间复杂度O(n)
+   cnt：节点数量
+   l[x]：节点x的匹配长度
+   f[x]：失配指针，f[x]表示的状态为x表示的最小状态的后缀
+   l[x]-l[f[x]]即x到f[x]之间非重子串的数量
+   比如x:abc f[x]:c，则l[x]-l[f[x]]就得到了串bc和串abc
+   r[x]：right集合，x状态的串数量
+   数组开串长两倍大小
+ */
+char s[N];
+struct SAM {
+  int p, q, np, nq, cnt, lst, a[N][26], l[N], f[N], tot;
+  int Tr(char c) { return c - 'a'; }
+  SAM() {
+    cnt = 0;
+    lst = ++cnt;
+  }
+  // 匹配长度与失配位置的匹配长度之差就是他们之间的子串数量
+  int val(int c) { return l[c] - l[f[c]]; }
+  void Initialize() {
+    memset(l, 0, sizeof(int) * (cnt + 1));
+    memset(f, 0, sizeof(int) * (cnt + 1));
+    for (int i = 0; i <= cnt; i++)
+      for (int j = 0; j < 26; j++) a[i][j] = 0;
+    cnt = 0;
+    lst = ++cnt;
+  }
+  /*
+     每次extend之后tot表示非重子串的数量
+     Trick：
+     求解串区间非重子串数量的时候可考虑建立长度个数SAM
+     用ans[l][r]保存l为起点extend到r位置时候的tot
+   */
+  void extend(int c) {
+    p = lst;
+    np = lst = ++cnt;
+    l[np] = l[p] + 1;
+    while (!a[p][c] && p) a[p][c] = np, p = f[p];
+    if (!p) {
+      f[np] = 1;
+      tot += val(np);
+    } else {
+      q = a[p][c];
+      if (l[p] + 1 == l[q]) {
+        f[np] = q;
+        tot += val(np);
+      } else {
+        nq = ++cnt;
+        l[nq] = l[p] + 1;
+        memcpy(a[nq], a[q], sizeof(a[q]));
+        tot -= val(p) + val(q);
+        f[nq] = f[q];
+        f[np] = f[q] = nq;
+        tot += val(p) + val(q) + val(np) + val(nq);
+        while (a[p][c] == q) a[p][c] = nq, p = f[p];
+      }
+    }
+  }
+  int b[N], x[N], r[N];
+  void build() {
+    scanf("%s", s + 1);
+    int len = strlen(s + 1);
+    for (int i = 1; i <= len; i++) extend(Tr(s[i]));
+    /*
+       以下部分为基数排序求right集合r[]
+       r[i]表示i状态的串数量
+       x[i]表示节点编号
+     */
+    memset(r, 0, sizeof(int) * (cnt + 1));
+    memset(b, 0, sizeof(int) * (cnt + 1));
+    for (int i = 1; i <= cnt; i++) b[l[i]]++;
+    for (int i = 1; i <= len; i++) b[i] += b[i - 1];
+    for (int i = 1; i <= cnt; i++) x[b[l[i]]--] = i;
+    for (int i = p = 1; i <= len; i++) {
+      p = a[p][Tr(s[i])];
+      r[p]++;
+    }
+    for (int i = cnt; i; i--) r[f[x[i]]] += r[x[i]];
+  }
+  /*
+     计算母串中恰好出现k次的子串的数量
+   */
+  void solve() {
+    int ans = 0, k;
+    scanf("%d", &k);
+    build();
+    for (int i = 1; i <= cnt; i++)
+      if (r[x[i]] == k) ans += val(x[i]);
+    printf("%d\n", ans);
+  }
+  /*
+     求子串在母串中的最长匹配
+   */
+  void LongestMatch() {
+    scanf("%s", s + 1);
+    int len = strlen(s + 1);
+    int p = 1, ans = 0;
+    for (int i = 1; i <= len; i++) {
+      int c = Tr(s[i]);
+      if (a[p][c])
+        p = a[p][c], ans++;
+      else
+        break;
+    }
+    printf("%d\n", ans);
+  }
+  /*
+     求子串在母串中圆环匹配成功次数
+     (将该子串拆成两段再首尾交换相接的串和母串匹配）
+   */
+  vector<int> ans;
+  bool flag[N];
+  void CircleMatch() {
+    long long tot = 0;
+    scanf("%s", s + 1);
+    int len = strlen(s + 1), p = 1, tmp = 0;
+    for (int i = 1; i < len; i++) s[i + len] = s[i];
+    for (int i = 1; i <= len * 2 - 1; i++) {
+      int c = Tr(s[i]);
+      if (a[p][c])
+        p = a[p][c], tmp++;
+      else {
+        while (p && !a[p][c]) p = f[p];
+        if (!p)
+          p = 1, tmp = 0;
+        else
+          tmp = l[p] + 1, p = a[p][c];
+      }
+      while (l[f[p]] >= len) p = f[p], tmp = l[p];
+    }
+    printf("%I64d\n", tot);
+  }
+  /*
+     F函数：S的所有长度为x的子串中，出现次数的最大值。
+   */
+  int F[N];
+  void CalF() {
+    int len = strlen(s + 1);
+    for (int i = 1; i <= cnt; i++) F[l[i]] = max(F[l[i]], r[i]);
+    for (int i = 1; i <= len; i++) printf("%d\n", F[i]);
+  }
+  /*
+     最小表示法
+     [不需要build]
+   */
+  void MinExp() {
+    Initialize();
+    scanf("%s", s);
+    int n = strlen(s), len = n;
+    for (int k = 0; k < 2; k++)
+      for (int i = 0; i < n; i++) extend(s[i] - 'a');
+    int p = 1;
+    while (n--) {
+      for (int i = 0; i < 26; i++)
+        if (a[p][i]) {
+          p = a[p][i];
+          break;
+        }
+    }
+    printf("%d\n", l[p] - len + 1);
+  }
+  /*
+     计算在母串中除给定字符串之外的非重子串数量
+     注意多组数据时u[]的初始化
+     u表示每个位置的最长匹配
+     AddString：往字符集中加入字符串
+     Calu：计算最终答案
+   */
+  int u[N];
+  void AddString() {
+    scanf("%s", s + 1);
+    int p = 1, len = strlen(s + 1), tmp = 0;
+    for (int i = 1; i <= len; i++) {
+      int c = s[i] - 'a';
+      if (a[p][c])
+        p = a[p][c], tmp++, u[p] = max(u[p], tmp);
+      else {
+        while (p && !a[p][c]) p = f[p];
+        if (!p)
+          p = 1, tmp = 0;
+        else
+          tmp = l[p] + 1, p = a[p][c], u[p] = max(u[p], tmp);
+      }
+    }
+  }
+  void Calu() {
+    long long ans = 0;
+    for (int i = cnt; i; i--) {
+      if (u[x[i]]) {
+        u[f[x[i]]] = max(u[x[i]], u[f[x[i]]]);
+        if (u[x[i]] < l[x[i]]) ans += l[x[i]] - u[x[i]];
+      } else
+        ans += val(x[i]);
+    }
+    printf("%lld\n", ans);
+  }
+  /*
+     逆串SAM构建后缀树
+     两点的LCA为两个后缀的最长前缀
+     BuildTree+ShowResult可计算出sum(len(T[i])+len(T[j])-2*lcp(T[i],T[j]))
+     T表示母串的后缀
+   */
+  vector<int> v[N];
+  void BuildTree() {
+    scanf("%s", s + 1);
+    int len = strlen(s + 1);
+    for (int i = len; i; i--) extend(Tr(s[i]));
+  }
+  long long res;
+  void Dfs(int x, int fx) {
+    int y = v[x][i];
+    Dfs(y, x);
+    size[x] += size[y];
+  }
+  l[x] -= l[fx];
+  res = res - (long long)size[x] * (size[x] - 1) * l[x];
+}
+void ShowResult() {
+  int len = strlen(s + 1);
+  res = (long long)(len - 1) * len * (len + 1) / 2;
+  printf("%lld\n", res);
+}
+/*
+   多串最长公共子串
+   母串build
+   mx数组初始化for(int i=1;i<=cnt;i++)mx[i]=l[i];
+ */
+void doit() {
+  int len = strlen(s + 1), tmp = 0, p = 1;
+  static int arr[N];
+  for (int i = 1; i <= len; i++) {
+    int c = s[i] - 'a';
+    if (a[p][c])
+      p = a[p][c], tmp++;
+    else {
+      while (p && !a[p][c]) p = f[p];
+      if (!p)
+        p = 1, tmp = 0;
+      else
+        tmp = l[p] + 1, p = a[p][c];
+    }
+    arr[p] = max(arr[p], tmp);
+  }
+  for (int i = cnt; i; i--) {
+    int t = x[i];
+    mx[t] = min(mx[t], arr[t]);
+    if (arr[t] && f[t]) arr[f[t]] = l[f[t]];
+    arr[t] = 0;
+  }
+}
+void getans() {
+  int ans = 0;
+  for (int i = 1; i <= cnt; i++) ans = max(ans, mx[i]);
+  printf("%d\n", ans);
+}
+/*
+   查询字典序排名第k的子串
+ */
+void query(int k) {
+  int p = 1;
+  while (k) {
+    for (int i = 0; i < 26; i++)
+      if (a[p][i]) {
+        if (r[a[p][i]] >= k) {
+          putchar('a' + i);
+          p = a[p][i];
+          --k;
+          break;
+        } else
+          k -= r[a[p][i]];
+      }
+  }
+  puts("");
+}
+/*
+   两串最长公共子串
+ */
+int u[N];
+void solve() {
+  scanf("%s", s + 1);
+  int p = 1, len = strlen(s + 1), now = 1, tmp = 0, ans = len + 1;
+  for (int i = 1; i <= len; i++) {
+    int c = s[i] - 'a';
+    if (a[p][c])
+      p = a[p][c], u[p]++;
+    else {
+      while (p && !a[p][c]) p = f[p];
+      if (!p)
+        p = 1;
+      else
+        p = a[p][c], u[p]++;
+    }
+  }
+  for (int i = cnt; i; i--) u[f[x[i]]] += u[x[i]];
+  for (int i = 1; i <= cnt; i++)
+    if (u[i] == 1 && r[i] == 1) ans = min(ans, l[f[i]] + 1);
+  if (ans == len + 1)
+    puts("-1");
+  else
+    printf("%d\n", ans);
+}
+}
+\end{lstlisting}
+\section{ 广义后缀自动机}
+\begin{lstlisting}
+/*
+   广义SAM
+   题目大意：给出多个主串，和多个子串，问每个子串在多少个主串中出现过
+   题解：对Trie建广义SAM，从根dfs保存lst，
+   用SAM跑每个主串，状态维护cnt和cur分别为出现次数及上一次出现是哪个串，
+   出现次数向父亲传递，所以要沿着Parent向上跑更新，遇到cur=当前串时停止
+ */
+#include <algorithm>
+#include <cstdio>
+#include <cstring>
+#include <string>
+using namespace std;
+const int N = 200010;
+typedef long long ll;
+int n, Q;
+string ss[N];
+char s[N << 1];
+struct node {
+  int ch[130], par, val;
+  int cnt, cur;
+} t[N];
+int sz = 1, root = 1, lst = 1;
+void extend(int c) {
+  int p = lst, np = ++sz;
+  if (!p)
+  else {
+    else {
+      int nq = ++sz;
+      t[nq] = t[q];
+    }
+  }
+  lst = np;
+}
+void solve() {
+  int u;
+  for (int i = 1; i <= n; i++) {
+    u = root;
+    string &s = ss[i];
+    int p = u;
+  }
+}
+while (Q--) {
+  scanf("%s", s);
+  int n = strlen(s), u = root, flag = 0;
+  for (int i = 0; i < n; i++) {
+    int c = s[i];
+    else {
+      flag = 1;
+      break;
+    }
+  }
+  if (flag)
+    puts("0");
+  else
+}
+}
+int main() {
+  scanf("%d%d", &n, &Q);
+  for (int i = 1; i <= n; i++) {
+    scanf("%s", s);
+    ss[i] = string(s);
+    lst = root;
+    for (int j = 0; j < len; j++) extend(s[j]);
+  }
+  solve();
+  return 0;
+}
+\end{lstlisting}
+\section{ Endpos 集维护}
+\begin{lstlisting}
+/*
+   Endpos集维护
+Problem:
+我们定义一个字符串A比一个字符串B酷当B在A中作为子串出现至少两次
+现在给定一个字符串S，要求找到最长的子串序列S1,S2,S3……
+要求对于任意i，S[i+1]比S[i]酷
+Solution:
+我们发现，如果我们要找一个字符串b，使得字符串a作为子串在其中出现至少两次
+即a的endpos集合在[pos[b]-len[b]+len[a],pos[b]]中出现至少两次
+最短的b串一定是以a为前缀且以a为后缀的，可以得出结论a为b的border
+那么只要a的endpos集合在[pos[b]-len[b]+len[a],pos[b]-1]中出现即可
+用线段树维护endpos，将endpos按fail链线段树合并得到每个节点的endpos集合
+查询区间[pos[b]-len[b]+len[a],pos[b]-1]是否有值
+在fail链节点上保存最长子序列的最后一位，每次扩展时在这一位的线段树上查询
+ */
+using namespace std;
+const int N = 400000 + 10;
+int Tr(char c) { return c - 'a'; }
+int p, q, np, nq, cnt, lst, a[N][26], l[N], f[N], pos[N];
+void extend(int c, int ps) {
+  p = lst;
+  np = lst = ++cnt;
+  l[np] = l[p] + 1;
+  pos[np] = ps;
+  while (!a[p][c] && p) a[p][c] = np, p = f[p];
+  if (!p)
+    f[np] = 1;
+  else {
+    q = a[p][c];
+    if (l[p] + 1 == l[q])
+      f[np] = q;
+    else {
+      nq = ++cnt;
+      l[nq] = l[p] + 1;
+      pos[nq] = pos[q];
+      memcpy(a[nq], a[q], sizeof(a[q]));
+      f[nq] = f[q];
+      f[np] = f[q] = nq;
+      while (a[p][c] == q) a[p][c] = nq, p = f[p];
+    }
+  }
+}
+int ls[N * 30], rs[N * 30], rt[N], tot;
+void upd(int &x, int l, int r, int p) {
+  x = ++tot;
+  if (l == r) return;
+  int mid = l + r >> 1;
+  p <= mid ? upd(ls[x], l, mid, p) : upd(rs[x], mid + 1, r, p);
+}
+int merge(int x, int y) {
+  if (!x || !y) return x + y;
+  int z = ++tot;
+  ls[z] = merge(ls[x], ls[y]);
+  rs[z] = merge(rs[x], rs[y]);
+  return z;
+}
+int qry(int x, int l, int r, int ql, int qr) {
+  if (!x) return 0;
+  if (ql <= l && qr >= r) return 1;
+  int mid = l + r >> 1, res = 0;
+  if (ql <= mid) res |= qry(ls[x], l, mid, ql, qr);
+  if (qr > mid) res |= qry(rs[x], mid + 1, r, ql, qr);
+  return res;
+}
+char s[N];
+int n, b[N], x[N], r[N], top[N], dp[N];
+void solve() {
+  int ans = 1;
+  cnt = 0, lst = ++cnt;
+  scanf("%d", &n);
+  scanf("%s", s + 1);
+  for (int i = 1; i <= n; i++) {
+    extend(Tr(s[i]), i);
+    upd(rt[lst], 1, n, i);
+  }
+  for (int i = 1; i <= cnt; i++) b[l[i]]++;
+  for (int i = 1; i <= n; i++) b[i] += b[i - 1];
+  for (int i = 1; i <= cnt; i++) x[b[l[i]]--] = i;
+  for (int i = cnt; i > 1; i--) rt[f[x[i]]] = merge(rt[f[x[i]]], rt[x[i]]);
+  for (int i = 2; i <= cnt; i++) {
+    int u = x[i], fu = f[u];
+    if (fu == 1) {
+      dp[u] = 1, top[u] = u;
+      continue;
+    }
+    int t = qry(rt[top[fu]], 1, n, pos[u] - l[u] + l[top[fu]], pos[u] - 1);
+    dp[u] = dp[fu] + t;
+    top[u] = t ? u : top[fu];
+    ans = max(ans, dp[u]);
+  }
+  printf("%d\n", ans);
+}
+int main() {
+  solve();
+  return 0;
+}
+\end{lstlisting}
+\section{ 区间非重子串数量}
+\begin{lstlisting}
+/*
+Problem:
+求区间本质不同的子串数量
+Solution:
+我们用线段树维护每个节点为左端点的，到r为右端点为止的本质不同子串数量
+每个相同的子串只将值保留在最后一次出现的左端点
+当一个字符被新增到原串的末尾时，会在某些左端点增加新的本质不同的串
+同时部分子串最后一次出现的左端点将移动到串尾
+我们对[1,pos]前缀的所有左端点答案+1，考虑减去重复的串
+对于串[v,r]，如果出现在[l,r-v+l]，那么两者在后缀自动机fail树上的lca就是两者的重复串集
+在每个串位置记录最后一次出现的位置ps，我们从根到当前叶节点按照长度处理重复串，更新对应right集新的位置
+我们发现重复串和LCT的access操作一致，只会发生O(log(n))段ps的变动
+我们通过LCT的access操作保存在fail链上上一次串的出现位置，提取变动段，用线段树维护即可
+复杂度O(nlog^2n)
+ */
+using namespace std;
+typedef long long ll;
+const int N = 100000 + 10;
+struct Ask {
+  int l, r, id;
+} ask[N];
+ll ans[N];
+char s[N];
+// SAM
+int Tr(char c) { return c - 'a'; }
+int cnt, lst, a[N << 1][26], l[N << 1], f[N << 1], mrk[N << 1];
+void extend(int c) {
+  int p = lst;
+  int np = lst = ++cnt;
+  l[np] = l[p] + 1;
+  mrk[np] = 1;
+  while (!a[p][c] && p) a[p][c] = np, p = f[p];
+  if (!p)
+    f[np] = 1;
+  else {
+    int q = a[p][c];
+    if (l[p] + 1 == l[q])
+      f[np] = q;
+    else {
+      int nq = ++cnt;
+      l[nq] = l[p] + 1;
+      mrk[nq] = 0;
+      memcpy(a[nq], a[q], sizeof(a[q]));
+      f[nq] = f[q];
+      f[np] = f[q] = nq;
+      while (a[p][c] == q) a[p][c] = nq, p = f[p];
+    }
+  }
+}
+// Segment Tree
+ll tag[N << 1], sum[N << 1];
+int idx(int l, int r) { return l + r | l != r; }
+void build(int l, int r) {
+  int x = idx(l, r), mid = l + r >> 1;
+  tag[x] = sum[x] = 0;
+  if (l == r) return;
+  build(l, mid);
+  build(mid + 1, r);
+}
+void add_tag(int l, int r, ll v) {
+  int x = idx(l, r);
+  tag[x] += v;
+  sum[x] += v * (r - l + 1);
+}
+void pd(int l, int r) {
+  int x = idx(l, r), mid = l + r >> 1;
+  if (tag[x]) {
+    add_tag(l, mid, tag[x]);
+    add_tag(mid + 1, r, tag[x]);
+    tag[x] = 0;
+  }
+}
+void up(int l, int r) {
+  int mid = l + r >> 1;
+  sum[idx(l, r)] = sum[idx(l, mid)] + sum[idx(mid + 1, r)];
+}
+void upd(int l, int r, int ul, int ur, ll v) {
+  int x = idx(l, r), mid = l + r >> 1;
+  if (ul <= l && r <= ur) {
+    add_tag(l, r, v);
+    return;
+  }
+  pd(l, r);
+  if (ul <= mid) upd(l, mid, ul, ur, v);
+  if (mid < ur) upd(mid + 1, r, ul, ur, v);
+  up(l, r);
+}
+ll qry(int l, int r, int ql, int qr) {
+  int x = idx(l, r), mid = l + r >> 1;
+  if (ql <= l && r <= qr) return sum[x];
+  pd(l, r);
+  ll res = 0;
+  if (ql <= mid) res += qry(l, mid, ql, qr);
+  if (mid < qr) res += qry(mid + 1, r, ql, qr);
+  return res;
+}
+// LCT
+pair<int, int> mp[N];
+int fa[N << 1], son[N << 1][2], tmp[N << 1];
+int cov[N << 1], ps[N << 1], len[N << 1];
+void cov1(int x, int v) {
+  cov[x] = v;
+  ps[x] = v;
+}
+void pb(int x) {
+  if (cov[x]) {
+    cov1(son[x][0], cov[x]);
+    cov1(son[x][1], cov[x]);
+    cov[x] = 0;
+  }
+}
+void lct_up(int x) {
+  if (son[x][0]) ps[x] = max(ps[x], ps[son[x][0]]);
+  if (son[x][1]) ps[x] = max(ps[x], ps[son[x][1]]);
+}
+void rotate(int x) {
+  int y = fa[x], w = son[y][1] == x;
+  son[y][w] = son[x][w ^ 1];
+  if (son[x][w ^ 1]) fa[son[x][w ^ 1]] = y;
+  if (fa[y]) {
+    int z = fa[y];
+    if (son[z][0] == y)
+      son[z][0] = x;
+    else if (son[z][1] == y)
+      son[z][1] = x;
+  }
+  fa[x] = fa[y];
+  fa[y] = x;
+  son[x][w ^ 1] = y;
+  lct_up(y);
+}
+bool isroot(int x) { return !fa[x] || son[fa[x]][0] != x && son[fa[x]][1] != x; }
+void splay(int x) {
+  int s = 1, i = x, y;
+  tmp[1] = i;
+  while (!isroot(i)) tmp[++s] = i = fa[i];
+  while (s) pb(tmp[s--]);
+  while (!isroot(x)) {
+    y = fa[x];
+    if (!isroot(y)) {
+      if ((son[fa[y]][0] == y) ^ (son[y][0] == x))
+        rotate(x);
+      else
+        rotate(y);
+    }
+    rotate(x);
+  }
+  lct_up(x);
+}
+int mcnt;
+void access(int x, int v) {
+  mcnt = 0;
+  cov1(x, v);
+  for (int y = 0; x; y = x, x = fa[x]) {
+    splay(x);
+    son[x][1] = y;
+    mp[++mcnt] = make_pair(len[x], ps[x]);
+    lct_up(x);
+  }
+}
+int n, q;
+void lct_init() {
+  for (int i = 0; i <= 2 * n; ++i) {
+    son[i][0] = son[i][1] = fa[i] = 0;
+    ps[i] = cov[i] = len[i] = 0;
+  }
+}
+int b[N << 1], x[N << 1];
+int ver[N << 1], id[N << 1];
+void init() {
+  scanf("%d%d", &n, &q);
+  scanf("%s", s + 1);
+  lct_init();
+  build(1, n);
+  memset(l, 0, sizeof(int) * (cnt + 1));
+  memset(f, 0, sizeof(int) * (cnt + 1));
+  memset(b, 0, sizeof(int) * (cnt + 1));
+  cnt = 0, lst = ++cnt;
+  for (int i = 1; i <= n; i++) extend(Tr(s[i]));
+  for (int i = 1; i <= cnt; i++) b[l[i]]++;
+  for (int i = 1; i <= n; i++) b[i] += b[i - 1];
+  for (int i = 1; i <= cnt; i++) x[b[l[i]]--] = i;
+  for (int i = 1; i <= cnt; ++i) {
+    id[x[i]] = i;
+    if (mrk[x[i]]) ver[l[x[i]]] = i;
+  }
+  for (int i = 1; i <= cnt; i++) {
+    len[i] = l[x[i]];
+    if (f[x[i]]) fa[i] = id[f[x[i]]];
+  }
+  int l, r;
+  for (int i = 1; i <= q; i++) {
+    scanf("%d%d", &l, &r);
+    ask[i] = {l + 1, r + 1, i};
+  }
+  sort(ask + 1, ask + q + 1);
+}
+void solve() {
+  int p = 1;
+  for (int i = 1; i <= n; i++) {
+    upd(1, n, 1, i, 1);
+    access(ver[i], i);
+    int pre = 0;
+    for (int j = mcnt; j > 1; j--) {
+      -1);
+    }
+    p++;
+  }
+}
+for (int i = 1; i <= q; i++) printf("%lld\n", ans[i]);
+}
+int main() {
+  init();
+  solve();
+  return 0;
+}
+\end{lstlisting}
+\section{ 子序列自动机}
+\begin{lstlisting}
+/*
+   子序列自动机
+   复杂度O(n*SIGMA)
+ */
+using namespace std;
+struct DASG {
+  static const int SIZE = 100000 + 10, SIGMA = 26;
+  struct Node {
+    Node *ch[SIGMA];
+    Node() { memset(ch, 0, sizeof(ch)); }
+  } pool[SIZE], *sz, *rt, *last[SIGMA];
+  void init() {
+    sz = pool;
+    rt = sz++;
+    std::fill(last, last + SIGMA, rt);
+  }
+  void add(int x) {
+    Node *np = sz++;
+    for (Node *p = last[x]; p < np; ++p) {
+      if (!p->ch[x]) p->ch[x] = np;
+    }
+    last[x] = np;
+  }
+} dasg;
+char s[100010];
+int m;
+int main() {
+  scanf("%s", s);
+  int n = strlen(s);
+  scanf("%d", &m);
+  while (m--) {
+    scanf("%s", s);
+    int len = strlen(s);
+    for (int i = 0; i < len; i++) {
+      if (!x->ch[s[i] - 'a']) {
+        puts("No");
+        break;
+      }
+      x = x->ch[s[i] - 'a'];
+      if (i == len - 1) puts("Yes");
+    }
+  }
+  return 0;
+}
+// 求串s的最长的子序列使得其字典序大于串t
+using namespace std;
+const int N = 1000010;
+int ps[N];
+int ch[N][26];
+int sz, rt, lst[26];
+void init() {
+  sz = 0;
+  rt = sz++;
+}
+void add(int x, int pos) {
+  ps[sz] = pos;
+  int np = sz++;
+  for (int p = lst[x]; p < np; ++p) {
+    if (!ch[p][x]) ch[p][x] = np;
+  }
+  lst[x] = np;
+}
+char s[N], t[N];
+int n, m;
+int main() {
+  scanf("%d%d", &n, &m);
+  scanf("%s", s);
+  scanf("%s", t);
+  int ans = -1;
+  init();
+  for (int i = 0; i < n; i++) add(s[i] - 'a', i);
+  int x = rt;
+  for (int i = 0; i < m; i++) {
+    for (int j = t[i] - 'a' + 1; j < 26; j++) {
+      if (!ch[x][j]) continue;
+      ans = max(ans, n - ps[ch[x][j]] + i);
+    }
+    if (!ch[x][t[i] - 'a']) break;
+    x = ch[x][t[i] - 'a'];
+    if (i == m - 1 && ps[x] != n - 1) ans = max(ans, n - ps[x] + i);
+  }
+  printf("%d\n", ans);
+  return 0;
+}
+\end{lstlisting}
+\section{ Manacher}
+\begin{lstlisting}
+/*
+   Manacher算法
+   r数组为奇回文半径
+ */
+int n, f[N << 1], r[N << 1];
+char s[N], c[N << 1];
+void manacher() {
+  for (int i = 1; i <= n; i++) c[i << 1] = s[i], c[(i << 1) + 1] = '#';
+  c[1] = '#';
+  c[n << 1 | 1] = '#';
+  c[0] = '&';
+  c[(n + 1) << 1] = '$';
+  int j = 0, k;
+  n = n << 1 | 1;
+  for (int i = 1; i <= n;) {
+    while (c[i - j - 1] == c[i + j + 1]) j++;
+    r[i] = j;
+    for (k = 1; k <= j && r[i] - k != r[i - k]; k++)
+      r[i + k] = min(r[i - k], r[i] - k);
+    i += k;
+    j = max(j - k, 0);
+  }
+}
+/*
+   求最长双倍回文
+   （记Wr为W串的倒置，求最长的形如WWrWWr的串的长度）
+ */
+int ans;
+int sf(int x) { return f[x] == x ? x : f[x] = sf(f[x]); }
+int main() {
+  while (~scanf("%d", &n)) {
+    scanf("%s", s + 1);
+    manacher();
+    ans = 0;
+    for (int i = 1; i <= n; i++) f[i] = (c[i] == '#') ? i : (i + 1);
+    for (int i = 3; i < n; i += 2) {
+      int j = sf(max(i - (r[i] >> 1), 1));
+      for (; j < i && j + r[j] < i; f[j] = sf(j + 1), j = f[j])
+        ;
+      if (j < i)
+        if ((i - j) << 1 > ans) ans = (i - j) << 1;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+/*
+Problem:
+求每一种旋转串的最长回文子串
+Solution:
+倍长字符串，转化为区间回文子串，manacher预处理倍长后的回文串
+对于查询区间[L,R]最长回文子串
+我们可以二分答案，检验区间[L+x-1,R-x+1]中是否存在长度大于x的回文中心即可
+ST表预处理r数组的区间最大值，复杂度O(nlogn)
+ */
+using namespace std;
+const int N = 1000000 + 10;
+int n, f[N << 1], r[N << 1];
+char s[N], c[N << 1];
+int dp[N << 1][21], lg2[N << 1];
+void Init(int n) {
+  for (int i = 2; i <= n; i++) lg2[i] = lg2[i / 2] + 1;
+  for (int i = 1; i <= n; i++) dp[i][0] = r[i];
+  for (int j = 1; (1 << j) <= n; j++)
+    for (int i = 1; i + (1 << j) - 1 <= n; i++)
+      dp[i][j] = max(dp[i][j - 1], dp[i + (1 << (j - 1))][j - 1]);
+}
+int Max(int l, int r) {
+  if (l > r) swap(l, r);
+  int k = lg2[r - l + 1];
+  return max(dp[l][k], dp[r - (1 << k) + 1][k]);
+}
+void manacher() {
+  for (int i = 1; i <= n; i++) c[i << 1] = s[i], c[(i << 1) + 1] = '#';
+  c[1] = '#';
+  c[n << 1 | 1] = '#';
+  c[0] = '&';
+  c[(n + 1) << 1] = '$';
+  int j = 0, k;
+  n = n << 1 | 1;
+  for (int i = 1; i <= n;) {
+    while (c[i - j - 1] == c[i + j + 1]) j++;
+    r[i] = j;
+    for (k = 1; k <= j && r[i] - k != r[i - k]; k++)
+      r[i + k] = min(r[i - k], r[i] - k);
+    i += k;
+    j = max(j - k, 0);
+  }
+}
+int main() {
+  scanf("%d%s", &n, s + 1);
+  int m = n;
+  n = strlen(s + 1);
+  for (int i = n + 1; i <= 2 * n; i++) s[i] = s[i - n];
+  n = n * 2;
+  manacher();
+  Init(n);
+  // 区间[i,i+n-1]的最长回文子串
+  for (int i = 1; i <= m; i++) {
+    int l = 1, r = m, ans = 1;
+    int L = 2 * i, R = 2 * (i + m - 1);
+    while (l <= r) {
+      int mid = l + r >> 1;
+      if (Max(L + mid - 1, R - mid + 1) >= mid)
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ Manacher+ 树状数组}
+\begin{lstlisting}
+/*
+   Manacher+BIT
+   问最少用几个回文串可以构成给出串，重叠部分可以合并
+ */
+char s[100010], a[50010];
+const int INF = 0x3f3f3f3f;
+int cnt, n, c[100010], f[100010];
+struct seg {
+  int l, r;
+} l[100010];
+void add_edge(int x, int y) {
+  x = x / 2 + 1;
+  y = y / 2 - 1;
+  if (x > y) return;
+  l[++cnt] = (seg){x, y};
+}
+void update(int x, int val) {
+  while (x) c[x] = min(c[x], val), x -= x & -x;
+}
+int query(int x) {
+  if (!x) return 0;
+  int res = INF;
+  while (x <= n) res = min(c[x], res), x += x & -x;
+  return res;
+}
+void manacher(char *a) {
+  int m, r, p, i;
+  for (i = 1; i <= n; i++) s[i << 1] = a[i], s[i << 1 | 1] = '#';
+  s[0] = '$', s[1] = '#', s[m = (n + 1) << 1] = '@';
+  for (r = p = 0, f[1] = 1, i = 2; i < m; i++) {
+    for (f[i] = r > i ? min(r - i, f[p * 2 - i]) : 1;
+        s[i - f[i]] == s[i + f[i]]; f[i]++)
+      ;
+    add_edge(i - f[i], i + f[i]);
+    if (i + f[i] > r) r = i + f[i], p = i;
+  }
+}
+int main() {
+  while (~scanf("%s", a + 1)) {
+    n = strlen(a + 1);
+    cnt = 0;
+    for (int i = 1; i <= n; i++) c[i] = INF;
+    manacher(a);
+    sort(l + 1, l + cnt + 1);
+    int ans = INF, tmp;
+    for (int i = 1; i <= cnt; i++) {
+    }
+    printf("%d\n", ans - 1);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ 反对称子串}
+\begin{lstlisting}
+/*
+   反对称子串
+   将一个01串的01取反之后将串反过来跟原串一样
+   求一个字符串的反对称子串的数量
+ */
+int n, m, i, r, p, f[N << 1];
+long long ans;
+char a[N], s[N << 1];
+int min(int a, int b) { return a < b ? a : b; }
+bool check(char x, char y) {
+  if (x == '#' && y == '#') return 1;
+  if ((x - '0') + (y - '0') == 1) return 1;
+  return 0;
+}
+void manacher(char *a) {
+  for (i = 1; i <= n; i++) s[i << 1] = a[i], s[i << 1 | 1] = '#';
+  s[0] = '$', s[1] = '#', s[m = (n + 1) << 1] = '&';
+  for (r = p = 0, f[1] = 1, i = 1; i<m; ans += f[i++]>> 1) {
+    for (f[i] = r > i ? min(r - i, f[p * 2 - i]) : 0;
+        check(s[i - f[i]], s[i + f[i]]); f[i]++)
+      ;
+    if (i + f[i] > r) r = i + f[i], p = i;
+  }
+}
+int main() {
+  scanf("%d", &n);
+  scanf(" %s", a + 1);
+  manacher(a);
+  printf("%lld\n", ans);
+  return 0;
+}
+\end{lstlisting}
+\section{ 回文自动机}
+\begin{lstlisting}
+/*
+   回文自动机
+   本质为回文后缀自动机，可处理回文后缀关系和回文统计
+attention: 使用时加入字符需要做char to int转化
+add(s[i] - 'a') 返回值为当前字符插入尾部形成的最长回文串后缀的id
+N：串长。
+S：字符集大小。
+son[x][y]：第 x 个点所代表的回文串两边加上字符 y 后的回文串。
+fail[x]：第 x 个点所代表的回文串的最长回文后缀。
+cnt[x]：第 x 个点所代表的回文串的出现次数（需建完树后 count() 一遍才可以）。
+len[x]：第 x 个点所代表的回文串的长度。
+num[x]：第 x 个点所代表的回文串的后缀回文的数量
+l[x]：第 x 个点所代表的回文串的回文后缀的长度和（取模）
+half[x]：第 x 个点所代表的回文串的小于等于串长一半的最长回文后缀
+l数组和num数组的应用
+id = add(s[i] - 'a')
+R[i] = num[id] * (i + 1) - l[id]
+可以计算出插入一个字符后以当前位置为右端点的回文串左端点之和
+fail数组的应用
+可以fail[x]向x连边形成fail树，根为0
+一个点的祖先节点为它的回文后缀
+ */
+const int N = 1000010, S = 26;
+int l[N], half[N];
+int all, son[N][S], fail[N], len[N], text[N], num[N], cnt[N], lst, tot;
+int newnode(int _l) {
+  for (int i = 0; i < S; i++) son[tot][i] = 0;
+  l[tot] = num[tot] = cnt[tot] = 0, len[tot] = _l;
+  return tot++;
+}
+void init() {
+  lst = tot = all = 0;
+  newnode(0), newnode(-1);
+  text[0] = -1, fail[0] = 1;
+}
+int getfail(int x) {
+  while (text[all - len[x] - 1] != text[all]) x = fail[x];
+  return x;
+}
+void gethalf(int y, int x, int w) {
+  half[y] = son[getfail(half[x])][w];
+  while (len[half[y]] * 2 > len[y]) half[y] = fail[half[y]];
+}
+int add(int w) {
+  text[++all] = w;
+  int x = getfail(lst);
+  if (!son[x][w]) {
+    int y = newnode(len[x] + 2);
+    fail[y] = son[getfail(fail[x])][w];
+    son[x][w] = y;
+    l[y] = (1ll * l[fail[y]] + len[y]) % P;
+    num[y] = num[fail[y]] + 1;
+    gethalf(y, x, w);
+  }
+  lst = son[x][w];
+  cnt[lst]++;
+  return lst;
+}
+void count() {
+  for (int i = tot - 1; ~i; i--) cnt[fail[i]] += cnt[i];
+}
+/*
+   Example(回文串划分方案数)
+   题目大意：给出一个串s，现在要求将其划分子串，并且划分结果呈回文
+   求方案数，如abcdabcd划分为ab，cd，cd，ab，为回文。
+   题解：我们将串后半部分倒序依次插入前半部分的后面，比如abcdcdab，
+   将构成abbacddc，那么问题就转化为新串能拆分成回文子串的方案数，
+   我们对新串边构建回文自动机，并在构建的同时计算答案，
+   diff数组表示节点与其失配位置最长后缀回文的差值，
+   记anc为将连续相同差值去除后的祖先节点，比如abbabbabba，
+   在去除连续相同差值abb之后，得到祖先节点a，
+   则对于一种差值长度的答案来说，若失配位置为其祖先节点，则答案等于失配节点的答案
+   否则其值为拿掉祖先节点加一倍差值之后的位置的答案ans，加上其失配节点的答案g，
+   对于不同差值长度的节点答案g累积到当前位置答案ans上去，
+   最后输出结尾位置的答案即可。
+ */
+using namespace std;
+const int N = 1000010;
+const int mod = 1000000007;
+int n, cnt, lst, s[N], l[N], f[N], diff[N], anc[N], g[N], ans[N], a[N][26];
+char S[N];
+void add(int &x, int y) {
+  if ((x += y) >= mod) x -= mod;
+}
+void init() {
+  lst = cnt = 1;
+  f[0] = 1, f[1] = 0;
+  l[1] = -1;
+}
+void extend(int np, int c) {
+  int p = lst;
+  while (s[np] != s[np - l[p] - 1]) p = f[p];
+  if (!a[p][c]) {
+    int x = ++cnt, fp = f[p];
+    while (s[np] != s[np - l[fp] - 1]) fp = f[fp];
+    l[x] = l[p] + 2;
+    f[x] = a[fp][c];
+    a[p][c] = x;
+    diff[x] = l[x] - l[f[x]];
+    anc[x] = diff[x] == diff[f[x]] ? anc[f[x]] : f[x];
+  }
+  lst = a[p][c];
+}
+int main() {
+  scanf("%s", S + 1);
+  n = strlen(S + 1);
+  for (int i = 1; i * 2 <= n; i++) {
+    s[i * 2 - 1] = S[i] - 'a';
+    s[i * 2] = S[n - i + 1] - 'a';
+  }
+  s[0] = -1;
+  ans[0] = 1;
+  init();
+  for (int i = 1; i <= n; i++) {
+    extend(i, s[i]);
+    for (int x = lst; x; x = anc[x]) {
+      g[x] = ans[i - l[anc[x]] - diff[x]];
+      if (anc[x] != f[x]) add(g[x], g[f[x]]);
+      if (i % 2 == 0) add(ans[i], g[x]);
+    }
+  }
+  printf("%d\n", ans[n]);
+  return 0;
+}
+\end{lstlisting}
+\section{ 双端回文树}
+\begin{lstlisting}
+/*
+   双端回文树
+   Operation
+ */
+using namespace std;
+typedef long long LL;
+const int N = 200010, S = 26;
+struct Palindromic_Tree {
+  int son[N][S], fail[N], len[N];
+  int text[N], L, R, num[N], lst[2], p;
+  LL tot;
+  int newnode(int l) {
+    for (int i = 0; i < S; i++) son[p][i] = 0;
+    num[p] = 0;
+    len[p] = l;
+    return p++;
+  }
+  void init(int n) {
+    p = 0;
+    newnode(0);
+    newnode(-1);
+    memset(text, -1, sizeof(text));
+    L = n;
+    R = n - 1;
+    lst[0] = lst[1] = 1;
+    fail[0] = 1;
+    tot = 0;
+  }
+  int get_fail(int v, bool d) {
+    if (d)
+      while (text[R - len[v] - 1] != text[R]) v = fail[v];
+    else
+      while (text[L + len[v] + 1] != text[L]) v = fail[v];
+    return v;
+  }
+  void add(int c, bool d) {
+    if (d)
+      text[++R] = c;
+    else
+      text[--L] = c;
+    int x = get_fail(lst[d], d);
+    if (!son[x][c]) {
+      int y = newnode(len[x] + 2);
+      fail[y] = son[get_fail(fail[x], d)][c];
+      son[x][c] = y;
+      num[y] = num[fail[y]] + 1;
+    }
+    lst[d] = son[x][c];
+    if (len[lst[d]] == R - L + 1) lst[d ^ 1] = lst[d];
+    tot += num[lst[d]];
+  }
+};
+Palindromic_Tree T;
+int n;
+void solve() {
+  int op;
+  char c;
+  for (int i = 0; i < n; i++) {
+    scanf("%d", &op);
+    if (op <= 2) {
+      scanf(" %c", &c);
+    }
+  }
+}
+int main() {
+  while (~scanf("%d", &n)) solve();
+  return 0;
+}
+\end{lstlisting}
+\section{ 最小最大表示法}
+\begin{lstlisting}
+/*
+   最小最大表示法
+   flag=1：表示最小表示法，flag=0：最大表示法
+ */
+int Min_Max_Express(char *s, int len, bool flag) {
+  int i = 0, j = 1, k = 0;
+  while (i < len && j < len && k < len) {
+    int t = s[(j + k) % len] - s[(i + k) % len];
+    if (t == 0)
+      k++;
+    else {
+      if (flag) {
+        if (t > 0)
+          j += k + 1;
+        else
+          i += k + 1;
+      } else {
+        if (t > 0)
+          i += k + 1;
+        else
+          j += k + 1;
+      }
+      if (i == j) j++;
+      k = 0;
+    }
+  }
+  return min(i, j);
+}
+\end{lstlisting}
+\section{ Lyndon-Word 生成器}
+\begin{lstlisting}
+// 按字典序生成长度为n以内的Lyndonword
+void lyndon_generate(int n, int m) {
+  char z = 'a' + m - 1, s[1000];
+  s[0] = 'a' - 1;
+  for (int i = 1, x = 1;; ++i) {
+    s[x - 1]++;
+    s[x] = 0;
+    puts(s);
+    for (int j = x; j < n; ++j) s[j] = s[j - x];
+    for (x = n; s[x - 1] == z; --x);
+  }
+}
+\end{lstlisting}
+\section{ Lyndon 划分}
+\begin{lstlisting}
+/*
+   Duval算法
+   求出一个字符串的Lyndon分解
+   Lyndon串
+   串本身小于所有的循环位移结果
+ */
+using namespace std;
+std::vector<int> duval(char s[]) {
+  std::vector<int> ret;
+  int n = strlen(s) + 1; // zero used here
+  int start = 0, mid = 1, cur = 0;
+  for (int i = 0; i < n; ++i) {
+    if (s[i] == s[cur]) {
+      if (++cur == mid) cur = start;
+    } else if (s[i] > s[cur]) {
+      mid = i + 1;
+      cur = start;
+    } else if (s[i] < s[cur]) {
+      int temp = mid - start;
+      while (start + temp <= i) {
+        start += temp;
+        // 如果输出分界点直接在里面输出比较快
+        // printf("%d ",start);
+      }
+      i = cur = start;
+      mid = start + 1;
+    }
+  }
+  return ret;
+}
+char s[2000100];
+int main() {
+  scanf("%s", s);
+  auto res = duval(s);
+  // for (auto v : res) {
+  // if (v) printf("%d%c", v, " \n"[v==strlen(s)]);
+  // }
+  return 0;
+}
+\end{lstlisting}
+\section{ ShiftAnd}
+\begin{lstlisting}
+/*
+   ShiftAnd
+   柔性字符串匹配
+   给出一个字符串，找出其中所有的符合特定模式的子串位置，
+   符合特定模式是指，该子串的长度为n，并且第i个字符需要在给定的字符集合Si中
+ */
+const int M = 510, N = 2000010, L = 65, U = 256;
+bitset<M> dp[2], bt[U];
+int n, m, id[U], cnt, l;
+char s[N], t[L];
+void init() {
+  cnt = 0;
+  for (int i = '0'; i <= '9'; i++) id[i] = ++cnt;
+  for (int i = 'A'; i <= 'Z'; i++) id[i] = ++cnt;
+  for (int i = 'a'; i <= 'z'; i++) id[i] = ++cnt;
+}
+void ShiftAnd(int n, int m) {
+  int cur = 1, f = 0;
+  for (int i = 1; i <= n; i++, cur ^= 1) {
+    dp[cur] = dp[cur ^ 1] << 1 & bt[id[s[i]]];
+    if (dp[cur][m]) printf("%d\n", i - m + (f = 1));
+  }
+  if (!f) puts("NULL");
+}
+int main() {
+  init();
+  while (gets(s + 1)) {
+    n = strlen(s + 1);
+    scanf("%d", &m);
+    for (int i = 1; i <= m; i++) {
+      scanf("%d %s", &l, t);
+    }
+    ShiftAnd(n, m);
+    gets(s);
+  }
+  return 0;
+}
+\end{lstlisting}
+\section{ Hash}
+\begin{lstlisting}
+/*
+   字符串哈希
+   循环同构
+   Problem：
+   给出两个字符串，判断他们每一个前缀是否循环同构，
+   循环同构的意思就是，字符串首位相接拼成一个环，两个环通过旋转可以相等。
+   Solution：
+   这道题用到了一个神奇的结论，如果S字符串和T字符串循环同构，
+   那么必有S=u+v，T=v+u，而且u和v必有一个是最长匹配。
+   那么根据这个结论，我们可以用KMP算法在T中找S的最长前缀，
+   也就是每次匹配到i时候的j。那么对于T的前缀和S的后缀，
+   我们直接用哈希来判断是否相等，这样子就可以计算出两个串的前缀是否循环同构了。
+ */
+#include <cstdio>
+#include <cstring>
+using namespace std;
+const int N = 10005, base = 233;
+typedef long long ll;
+int T, nxt[N], ans[N];
+char a[N], b[N];
+ll hash[2][N], p[N];
+ll get_hash(int t, int L, int R) {
+  return hash[t][R] - hash[t][L - 1] * p[R - L + 1];
+}
+int check(int t, int m, int n) {
+  if (m == n) return 1;
+  return get_hash(t, m + 1, n) == get_hash(t ^ 1, 1, n - m);
+}
+void kmp(int n, char* a, int m, char* b, int t) {
+  int i, j;
+  for (nxt[1] = j = 0, i = 2; i <= n; nxt[i++] = j) {
+    while (j && a[j + 1] != a[i]) j = nxt[j];
+    if (a[j + 1] == a[i]) j++;
+  }
+  for (j = 0, i = 1; i <= m; i++) {
+    while (j && a[j + 1] != b[i]) j = nxt[j];
+    if (a[j + 1] == b[i]) {
+      j++;
+      if (!ans[i]) ans[i] = check(t, j, i);
+    }
+    if (j == n) j = nxt[j];
+  }
+}
+int main() {
+  for (int i = p[0] = 1; i < N; i++) p[i] = p[i - 1] * base;
+  while (~scanf(" %s %s", a + 1, b + 1)) {
+    int n = strlen(a + 1);
+    for (int i = 1; i <= n; i++) {
+      ans[i] = 0;
+      hash[0][i] = hash[0][i - 1] * base + a[i];
+      hash[1][i] = hash[1][i - 1] * base + b[i];
+    }
+    kmp(n, a, n, b, 0);
+    kmp(n, b, n, a, 1);
+    for (int i = 1; i <= n; i++) printf("%d", ans[i]);
+    puts("");
+  }
+  return 0;
+}
+/*
+   集合哈希
+Problem:
+规定一个字符串和另一个字符串匹配的条件为首尾两个字符相同，且所有字符的出现次数相同
+现在给定一个母串，询问多个子串，问子串在母串中的匹配次数
+子串长度和 \le 10^5，母串长度 \le 10^5
+Solution:
+我们将询问串按照长度分组，对于每种分组，我们计算母串中对应长度的哈希值
+然后统计对应组询问在该长度子串的哈希值中出现次数即可
+我们对除串首尾做字符的集合哈希，串首尾特殊处理累加到哈希值上去
+考虑子串长度和限制，复杂度均摊，最坏情况O(n\sqrt{n})
+ */
+using namespace std;
+typedef unsigned long long ull;
+const ull base = 131;
+const int N = 100000 + 10;
+int n, T, L[N], ans[N];
+ull p[125], Hash[N], h[N];
+char s[N], t[N];
+vector<int> id[N];
+int main() {
+  scanf("%d", &T);
+  for (int i = p[0] = 1; i < 125; i++) p[i] = p[i - 1] * base;
+  while (T--) {
+    scanf("%s", s);
+    scanf("%d", &n);
+    int len = strlen(s);
+    for (int i = 1; i <= n; i++) {
+      scanf("%s", t);
+      Hash[i] = 0;
+      L[i] = strlen(t);
+      for (int j = 1; j < L[i] - 1; j++) Hash[i] += p[t[j]];
+      Hash[i] += p[123] * t[0];
+      Hash[i] += p[124] * t[L[i] - 1];
+    }
+    sort(L + 1, L + n + 1);
+    int cnt = unique(L + 1, L + n + 1) - (L + 1);
+    for (int i = 1; i <= cnt; i++) {
+      ull H = 0;
+      int tot = 0;
+      for (int j = 0; j < len; j++) {
+        if (j >= L[i] - 1) {
+          H -= p[s[j - L[i] + 1]];
+          h[++tot] = H + p[123] * s[j - L[i] + 1] + p[124] * s[j];
+        }
+        H += p[s[j]];
+      }
+      sort(h + 1, h + tot + 1);
+      for (auto x : id[L[i]]) {
+        int p1 = upper_bound(h + 1, h + tot + 1, Hash[x]) - h;
+        int p2 = lower_bound(h + 1, h + tot + 1, Hash[x]) - h;
+        ans[x] = p1 - p2;
+      }
+    }
+    for (int i = 1; i <= n; i++) printf("%d\n", ans[i]);
+  }
+  return 0;
+}
+/*
+   相似串哈希
+   Problem：
+   两个字符串a和b相似当且仅当两个串长度相等
+   且a[i]等于a[j]时b[i]等于b[j]
+   a[i]不等于a[j]时b[i]也不等于b[j]
+   给定一个字符串，多次询问其某个子串在原串中相似匹配的次数
+Solution:
+对于每个子串，我们根据每个字母第一次出现的位置对其标号
+用标号来表示这个子串，那么如果标号序列的哈希值相同则子串相等
+当子串起始位置不同时，我们会得到不同的标号，我们发现标号序列存在后缀递推关系
+因此我们从后往前预处理这个标号，得到每个位置作为子串起点时标号对字母的映射
+维护每个字符的位置哈希，对于两个子串的比较，只要比较子串区间内所有对应标号的字符的位置哈希是否相同即可
+我们对所有后缀按照相似匹配的定义进行排序，那么包含与查询子串相似的串的后缀一定是连续的段
+对于查询一个子串相似匹配的次数，我们只要在后缀排名中二分找到这样的相似段的左右端点即可
+即两个后缀的最长匹配大于等于子串长度的最远位置，求最长匹配的过程可以二分加速
+ */
+using namespace std;
+typedef unsigned long long ull;
+const int N = 100000 + 10, C = 10;
+const int base = 131;
+int n, m, a[N][C], id[N], rk[N];
+ull p[N], b[N][C];
+char s[N];
+int getmax(int x, int y) {
+  if (x > y) swap(x, y);
+  int r = n - y + 1, l = 0, ans = 0, mid, h = 0;
+  while (l <= r) {
+    mid = (l + r) / 2;
+    h = 0;
+    for (int i = 0; h == i && i < C; i++)
+      h += (((b[x + mid - 1][a[x][i]] - b[x - 1][a[x][i]]) * p[y - x] -
+            b[y + mid - 1][a[y][i]] + b[y - 1][a[y][i]]) == 0);
+    if (h == C)
+      l = mid + 1, ans = mid;
+    else
+      r = mid - 1;
+  }
+  return ans;
+}
+bool cmp(int x, int y) {
+  int d = getmax(x, y);
+  if (d == n - max(x, y) + 1) return x > y;
+  int _A = 0, _B = 0;
+  for (int i = 0; i < C; i++) {
+    if (s[x + d] == a[x][i]) _A = i;
+    if (s[y + d] == a[y][i]) _B = i;
+  }
+  return _A < _B;
+}
+void init() {
+  for (int i = p[0] = 1; i < N; i++) p[i] = p[i - 1] * base;
+  for (int i = 1; i <= n; i++) s[i] -= 'a';
+  for (int i = 0; i < C; i++) a[n + 1][i] = i;
+  for (int i = n; i > 0; i--) {
+    int pos = 0;
+    for (int j = 0; j < C; j++) {
+      a[i][j] = a[i + 1][j];
+      if (a[i][j] == s[i]) pos = j;
+    }
+    while (pos--) swap(a[i][pos], a[i][pos + 1]);
+  }
+  for (int i = 1; i <= n; i++) {
+    b[i][s[i]] = p[i];
+    for (int j = 0; j < C; j++) b[i][j] = b[i][j] + b[i - 1][j];
+  }
+  for (int i = 1; i <= n; i++) id[i] = i;
+  stable_sort(id + 1, id + n + 1, cmp);
+  for (int i = 1; i <= n; i++) rk[id[i]] = i;
+}
+int main() {
+  scanf("%d%d", &n, &m);
+  scanf("%s", s + 1);
+  init();
+  while (m--) {
+    int l, r, ans;
+    scanf("%d%d", &l, &r);
+    int x = rk[l];
+    int d = r - l + 1;
+    l = ans = 1;
+    r = x;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (getmax(id[x], id[mid]) >= d)
+        ans = mid, r = mid - 1;
+      else
+        l = mid + 1;
+    }
+    int L = ans;
+    l = x;
+    r = n;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      if (getmax(id[x], id[mid]) >= d)
+        ans = mid, l = mid + 1;
+      else
+        r = mid - 1;
+    }
+    int R = ans;
+    printf("%d\n", R - L + 1);
+  }
+  return 0;
+}
+\end{lstlisting}

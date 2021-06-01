@@ -1,0 +1,1347 @@
+\chapter{图论}
+
+\section{SPFA}
+
+\begin{lstlisting}
+/*
+   SPFA SLF优化
+   判负环不能用入队次数
+   增加cnt与d并列更新，cnt>n即负环
+ */
+void add(int x, int y) {
+  if (y >= d[x]) return;
+  d[x] = y;
+  if (!in[x]) {
+    in[x] = 1;
+    if (y < d[q[h]])
+      q[--h] = x;
+    else
+      q[++t] = x; // SLF优化
+  }
+}
+void spfa(int S) { // S为源点
+  int i, x;
+  for (i = h = 1; i <= n; i++) d[i] = inf, in[i] = 0;
+  add(S, t = 0);
+  while (h != t + 1)
+    for (i = head[x = q[h++]], in[x] = 0; i; i = e[i].nxt[i])
+      add(e[i].to, d[x] + e[i].w);
+}
+\end{lstlisting}
+
+\section{同余最短路}
+
+\begin{lstlisting}
+/* 同余最短路
+ * 给定一张n个点m条边的无向带权图，
+ * 问是否存在一条从st号点到en号的长度为T的路径，不需要是简单路径。
+ * 取一条与st相连的权值最小的边w
+ * 设d[i][j]表示从st到i，路径长度模2w为j时，路径长度的最小值。
+ * 用最短路算法求出所有d[i][j],然后检查d[en][T%2w]是否不超过T即可
+ */
+typedef long long LL;
+const int N = 1000010;
+const LL INF = 0x3f3f3f3f3f3f3f3f;
+typedef pair<LL, int> seg;
+priority_queue<seg, vector<seg>, greater<seg> > q;
+int head[N], u[N], v[N], w[N], nxt[N], n, m, ed = 0;
+LL d[5][N], W;
+void add(int a, int b, int c) {
+  u[++ed] = a, v[ed] = b, w[ed] = c;
+  nxt[ed] = head[u[ed]];
+  head[u[ed]] = ed;
+}
+void Dijkstra(int src) {
+  for (int i = 0; i <= n; i++)
+    for (int j = 0; j < W; j++) d[i][j] = INF;
+  q.push(make_pair(0, src));
+  while (!q.empty()) {
+    seg now = q.top();
+    q.pop();
+    LL _w = now.first;
+    int x = now.second;
+    if (_w > d[x][_w % W]) continue;
+    for (int e = head[x]; e != -1; e = nxt[e]) {
+      LL nw = _w + w[e];
+      if (d[v[e]][nw % W] > nw) {
+        d[v[e]][nw % W] = nw;
+        q.push(make_pair(nw, v[e]));
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\section{分层图}
+
+\begin{lstlisting}
+/*
+   分层图最短路
+   (有k条路可以无代价通过)
+ */
+const int N = 200100;
+const int INF = ~0U >> 2;
+typedef pair<int, int> seg;
+priority_queue<seg, vector<seg>, greater<seg> > q;
+int p[N], d[N][25], head[N], u[N], v[N], w[N], nxt[N], n, m, a, b, c, k,
+    ed = 0, H, x[N], y[N];
+bool vis[N][25];
+void add(int a, int b, int c) {
+  u[++ed] = a, v[ed] = b, w[ed] = c;
+  nxt[ed] = head[u[ed]];
+  head[u[ed]] = ed;
+}
+void Dijkstra(int src) {
+  memset(vis, 0, sizeof(vis));
+  for (int i = 0; i <= n; i++)
+    for (int j = 0; j <= k; j++) d[i][j] = INF;
+  d[src][0] = 0;
+  q.push(make_pair(d[src][0], src));
+  while (!q.empty()) {
+    seg now = q.top();
+    q.pop();
+    int deep = now.second / (n + 1), x = now.second % (n + 1);
+    if (vis[x][deep]) continue;
+    vis[x][deep] = true;
+    for (int e = head[x]; e != -1; e = nxt[e]) {
+      if (d[v[e]][deep] > d[x][deep] + w[e]) {
+        d[v[e]][deep] = d[x][deep] + w[e];
+        q.push(make_pair(d[v[e]][deep], deep * (n + 1) + v[e]));
+      }
+      if (deep == k) continue;
+      if (d[x][deep] < d[v[e]][deep + 1]) {
+        d[v[e]][deep + 1] = d[x][deep];
+        q.push(
+            make_pair(d[v[e]][deep + 1], (deep + 1) * (n + 1) + v[e]));
+      }
+    }
+  }
+}
+void solve() {
+  scanf("%d%d%d", &n, &m, &k);
+  memset(head, -1, sizeof(head));
+  for (int i = 1; i <= m; i++) {
+    scanf("%d%d%d", &a, &b, &c);
+    add(a, b, c);
+    add(b, a, c);
+  }
+  Dijkstra(1);
+  printf("%d\n", d[n][k]);
+}
+
+\end{lstlisting}
+
+\section{K短路}
+
+\begin{lstlisting}
+/*
+   求k短路
+   Astar算法
+ */
+int n, m, s, t, k, dis[MAXN];
+struct node {
+  int v, c;
+  node(int v, int c) : v(v), c(c) {}
+  //用于优先队列先出的条件
+  inline bool operator<(const node &b) const {
+    return c + dis[v] > b.c + dis[b.v];
+  }
+};
+vector<node> map1[MAXN]; //用于dijkstra算法
+vector<node> map2[MAXN]; //用于A_star算法
+void dijkstra() {
+  int i, find[MAXN], v;
+  for (i = 1; i <= n; i++) dis[i] = INF;
+  memset(find, 0, sizeof(find));
+  priority_queue<node> heap;
+  dis[t] = 0;
+  heap.push(node(t, 0));
+  while (!heap.empty()) {
+    v = heap.top().v;
+    heap.pop();
+    if (find[v]) continue;
+    find[v] = 1;
+    for (i = 0; i < map1[v].size(); i++)
+      if (!find[map1[v][i].v] &&
+          dis[v] + map1[v][i].c < dis[map1[v][i].v]) {
+        dis[map1[v][i].v] = dis[v] + map1[v][i].c;
+        heap.push(node(map1[v][i].v, dis[map1[v][i].v]));
+      }
+  }
+}
+int A_star() {
+  int i, cnt[MAXN], v, g;
+  if (dis[s] == INF) return -1;
+  priority_queue<node> heap;
+  memset(cnt, 0, sizeof(cnt));
+  heap.push(node(s, 0)); // 0是g(x)
+  while (!heap.empty()) {
+    v = heap.top().v;
+    g = heap.top().c;
+    heap.pop();
+    cnt[v]++;
+    if (cnt[t] == k) return g;
+    if (cnt[v] > k) continue;
+    for (i = 0; i < map2[v].size(); i++)
+      heap.push(node(map2[v][i].v, g + map2[v][i].c));
+  }
+  return -1;
+}
+int main() {
+  int i, u, v, c;
+  scanf("%d%d", &n, &m);
+  for (i = 0; i < m; i++) {
+    scanf("%d%d%d", &u, &v, &c);
+    map2[u].push_back(node(v, c));
+    map1[v].push_back(node(u, c)); //反向储存求各节点到目标节点的最短距离
+  }
+  scanf("%d%d%d", &s, &t, &k);
+  if (s == t) k++;
+  dijkstra();
+  int ans = A_star();
+  printf("%d\n", ans);
+  return 0;
+}
+\end{lstlisting}
+
+\section{K短路输出路径}
+
+\begin{lstlisting}
+/* YenAlgorithm
+ * O(kn(m+nlogn))
+ * 求出s到t的k短路并输出路径
+ */
+typedef vector<int> Path;
+struct Cell {
+  int len, pos;
+  Path path, revPath;
+  vector<vector<int> > forbiddenList;
+  Cell() {}
+  Cell(int _len, int _pos, Path _path) : len(_len), pos(_pos), path(_path) {
+    revPath = path;
+    reverse(path.begin(), path.end());
+  }
+  bool operator<(const Cell &t) const {
+    return len > t.len || len == t.len && revPath > t.revPath;
+  }
+};
+#define RESET() \
+  memset(pre, 0, sizeof(pre)), memset(d, 0x3f, sizeof(d)), \
+  memset(flag, 0, sizeof(flag)), d[S] = 0, flag[S] = 1
+const int INF = 0x3f3f3f3f;
+int n, m, K, s, t;
+int g[55][55];
+int pre[55], d[55];
+int flag[55];
+int filter[55][55];
+priority_queue<Cell> q;
+Cell dijkstra(int S, int T) {
+  int now = S;
+  while (1) {
+    flag[now] = 1;
+    for (int i = 1; i <= n; i++)
+      if (!filter[now][i] && g[now][i] < INF) {
+        if (g[now][i] + d[now] < d[i])
+          d[i] = d[now] + g[now][i], pre[i] = now;
+        else if (g[now][i] + d[now] == d[i] && now < pre[i])
+          pre[i] = now;
+      }
+    now = 0;
+    for (int i = 1; i <= n; i++)
+      if (!flag[i] && d[i] < d[now]) now = i;
+    if (!now) break;
+  }
+  if (d[T] == INF) return Cell(0, 0, Path());
+  int fork_p, cnt = 0;
+  Path tmp;
+  for (int p = T; p; p = pre[p], cnt++)
+    tmp.push_back(p), pre[p] == S && (fork_p = cnt);
+  return Cell(d[T], tmp.size() - 1 - fork_p, tmp);
+}
+void modify(const Cell &pre, Cell &now) {
+  for (int i = 0; i < now.path.size(); i++)
+    now.forbiddenList.push_back(vector<int>());
+  for (int i = 0; i < now.path.size() - 1; i++)
+    now.forbiddenList[i].push_back(now.path[i + 1]);
+  if (pre.path.empty()) return;
+  now.forbiddenList[now.pos - 1] = pre.forbiddenList[now.pos - 1];
+  now.forbiddenList[now.pos - 1].push_back(now.path[now.pos]);
+}
+void printPath(Path &path) {
+  if (!path.size())
+    puts("No");
+  else {
+    printf("%d", path[0]);
+    for (int i = 1; i < path.size(); i++) printf("-%d", path[i]);
+    puts("");
+  }
+}
+Path yenAlgorithm(int S, int T, int K) {
+  RESET();
+  Cell now = dijkstra(S, T);
+  if (now.path.empty()) return Path();
+  modify(Cell(), now);
+  for (int i = 1; i < K; i++) {
+    Path nowP = now.path;
+    int pos = now.pos;
+    for (int j = pos - 1; j < nowP.size() - 1; j++) {
+      RESET();
+      for (int k = 1; k <= j; k++)
+        d[nowP[k]] =
+          d[pre[nowP[k]] = nowP[k - 1]] + g[nowP[k - 1]][nowP[k]],
+          flag[nowP[k]] = 1;
+          memset(filter, 0, sizeof(filter));
+          for (int k = 0; k < now.forbiddenList[j].size(); k++)
+            filter[nowP[j]][now.forbiddenList[j][k]] = 1;
+          Cell newOne = dijkstra(nowP[j], T);
+          if (newOne.path.empty()) continue;
+          modify(now, newOne);
+          q.push(newOne);
+    }
+    if (q.empty()) return Path();
+    now = q.top();
+    q.pop();
+  }
+  return now.revPath;
+}
+int main() {
+  scanf("%d%d%d%d%d", &n, &m, &K, &s, &t);
+  memset(g, 0x3f, sizeof(g));
+  while (m--) {
+    int u, v, w;
+    scanf("%d%d%d", &u, &v, &w);
+    g[v][u] = w;
+  }
+  Path path = yenAlgorithm(t, s, K);
+  printPath(path);
+  return 0;
+}
+
+\section{图论}
+
+\begin{lstlisting}
+/*
+   强连通分量
+   点编号 0~n-1
+   cmp记录强连通分量拓扑序
+   即缩后的点标号
+ */
+namespace SCC {
+  const int MAX_V = 10000;
+  int V; //顶点数
+  vector<int> G[MAX_V]; //图的邻接表表示
+  vector<int> rG[MAX_V]; //反向图
+  vector<int> vs; //后序遍历
+  bool used[MAX_V];
+  int cmp[MAX_V]; //所属强连通分量的拓扑序
+  void Initialize() {
+    for (int i = 0; i < V; i++) G[i].clear();
+    for (int i = 0; i < V; i++) rG[i].clear();
+  }
+  void add_edge(int from, int to) {
+    G[from].push_back(to);
+    rG[to].push_back(from);
+  }
+  void dfs(int v) {
+    used[v] = 1;
+    for (int i = 0; i < G[v].size(); i++) {
+      if (!used[G[v][i]]) dfs(G[v][i]);
+    }
+    vs.push_back(v);
+  }
+  void rdfs(int v, int k) {
+    used[v] = 1;
+    cmp[v] = k;
+    for (int i = 0; i < rG[v].size(); i++) {
+      if (!used[rG[v][i]]) rdfs(rG[v][i], k);
+    }
+  }
+  int scc() {
+    memset(used, 0, sizeof(used));
+    vs.clear();
+    for (int v = 0; v < V; v++) {
+      if (!used[v]) dfs(v);
+    }
+    memset(used, 0, sizeof(used));
+    int k = 0;
+    for (int i = vs.size() - 1; i >= 0; i--) {
+      if (!used[vs[i]]) rdfs(vs[i], k++);
+    }
+    return k;
+  }
+} // namespace SCC
+/*
+   Example1
+   询问一张图需要加入的最小有向边数量使得其构成强连通
+   Ans=max(NO_IN,NO_OUT)
+ */
+const int MAX_M = 50000;
+int N, M, x;
+int A[MAX_M], B[MAX_M];
+int in[MAX_V], out[MAX_V], NO_IN, NO_OUT;
+void solve() {
+  using namespace SCC;
+  scanf("%d%d", &N, &M);
+  V = N;
+  Initialize();
+  for (int i = 0; i < M; i++) {
+    int x, y;
+    scanf("%d%d", &x, &y);
+    add_edge(x - 1, y - 1);
+  }
+  int n = scc();
+  if (n == 1) {
+    puts("0");
+    return;
+  }
+  memset(in, 0, sizeof(in));
+  memset(out, 0, sizeof(out));
+  for (int i = 0; i < V; i++) {
+    for (int j = 0; j < G[i].size(); j++) {
+      if (cmp[i] != cmp[G[i][j]]) {
+        ++out[cmp[i]];
+        ++in[cmp[G[i][j]]];
+      }
+    }
+  }
+  NO_IN = NO_OUT = 0;
+  for (int i = 0; i < n; i++) {
+    if (!in[i]) NO_IN++;
+    if (!out[i]) NO_OUT++;
+  }
+  printf("%d\n", max(NO_IN, NO_OUT));
+}
+/*
+   Example2
+   求大小大于1的强连通数量
+ */
+const int MAX_M = 50000;
+int N, M;
+int A[MAX_M], B[MAX_M];
+int cnt[MAX_M];
+void solve() {
+  using namespace SCC;
+  scanf("%d%d", &N, &M);
+  V = N;
+  for (int i = 0; i < M; i++) scanf("%d%d", &A[i], &B[i]);
+  for (int i = 0; i < M; i++) {
+    add_edge(A[i] - 1, B[i] - 1);
+  }
+  int n = scc();
+  int num = 0;
+  memset(cnt, 0, sizeof(cnt));
+  for (int i = 0; i < V; i++) ++cnt[cmp[i]];
+  for (int i = 0; i < n; i++)
+    if (cnt[i] > 1) num++;
+  printf("%d\n", num);
+}
+/*
+   Example3
+   求能被所有点到达的点的数量
+ */
+const int MAX_M = 50000;
+int N, M;
+int A[MAX_M], B[MAX_M];
+void solve() {
+  using namespace SCC;
+  scanf("%d%d", &N, &M);
+  V = N;
+  for (int i = 0; i < M; i++) scanf("%d%d", &A[i], &B[i]);
+  for (int i = 0; i < M; i++) {
+    add_edge(A[i] - 1, B[i] - 1);
+  }
+  int n = scc();
+  int u = 0, num = 0;
+  for (int v = 0; v < V; v++) {
+    if (cmp[v] == n - 1) {
+      u = v;
+      num++;
+    }
+  }
+  memset(used, 0, sizeof(used));
+  rdfs(u, 0);
+  for (int v = 0; v < V; v++) {
+    if (!used[v]) {
+      num = 0;
+      break;
+    }
+  }
+  printf("%d\n", num);
+}
+
+\end{lstlisting}
+
+\section{边双联通分量}
+
+\begin{lstlisting}
+/*
+   边双连通分量
+   cut[i]表示输入的第i条边是否是桥
+   cnt表示边双连通分量的个数
+   from[i]表示i所属的边双连通分量编号
+ */
+using namespace std;
+const int N = 5010, M = 10010;
+int e[M][2], cut[M], g[N], v[M << 1], nxt[M << 1], ed = 1;
+int f[N], dfn[N], low[N], num, cnt, from[N], d[N];
+void add(int x, int y) {
+  v[++ed] = y;
+  nxt[ed] = g[x];
+  g[x] = ed;
+}
+void tarjan(int x) {
+  dfn[x] = low[x] = ++num;
+  for (int i = g[x]; i; i = nxt[i])
+    if (!dfn[v[i]]) {
+      f[v[i]] = i >> 1, tarjan(v[i]);
+      if (low[x] > low[v[i]]) low[x] = low[v[i]];
+    } else if (f[x] != (i >> 1) && low[x] > dfn[v[i]])
+      low[x] = dfn[v[i]];
+  if (f[x] && low[x] == dfn[x]) cut[f[x]] = 1;
+}
+void dfs(int x, int y) {
+  from[x] = y;
+  for (int i = g[x]; i; i = nxt[i])
+    if (!from[v[i]] && !cut[i >> 1]) dfs(v[i], y);
+}
+/*
+   Example
+   给出一张图，问增加几条边，
+   使得整张图构成双连通分量
+ */
+int n, m;
+int main() {
+  while (~scanf("%d%d", &n, &m)) {
+    memset(g, 0, sizeof(g));
+    memset(d, 0, sizeof(d));
+    memset(from, 0, sizeof(from));
+    memset(f, 0, sizeof(f));
+    memset(cut, 0, sizeof(cut));
+    memset(dfn, 0, sizeof(dfn));
+    num = 0;
+    ed = 1; // 求边双连通分量时，ed一定要为1
+    for (int i = 1; i <= m; i++) {
+      int u, v;
+      scanf("%d%d", &u, &v);
+      e[i][0] = u;
+      e[i][1] = v;
+      add(u, v);
+      add(v, u);
+    }
+    tarjan(1);
+    cnt = 0;
+    for (int i = 1; i <= n; i++)
+      if (!from[i]) dfs(i, ++cnt);
+    for (int i = 1; i <= m; i++) {
+      if (from[e[i][0]] != from[e[i][1]]) {
+        d[from[e[i][0]]]++;
+        d[from[e[i][1]]]++;
+      }
+    }
+    int res = 0;
+    for (int i = 1; i <= n; i++)
+      if (d[i] == 1) res++;
+    printf("%d\n", (res + 1) / 2);
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{点双联通分量}
+
+\begin{lstlisting}
+/*
+   点双连通分量
+ */
+int dfn[N], low[N], num, cut[N], q[N], t;
+void tarjan(int x) {
+  dfn[x] = low[x] = ++num, q[++t] = x;
+  for (int i = g[x]; i; i = nxt[i])
+    if (!dfn[v[i]]) {
+      int y = v[i];
+      tarjan(y);
+      if (low[x] > low[y]) low[x] = low[y];
+      if (dfn[x] <=
+          low[y]) { // x是割点，接下来一行输出所有该点双连通分量内的点
+        cut[x] = 1;
+        while (q[t] != x) printf("%d ", q[t--]);
+        printf("%d\n", x);
+      }
+    } else if (low[x] > dfn[v[i]])
+      low[x] = dfn[v[i]];
+}
+
+\end{lstlisting}
+
+\section{LCA}
+
+\begin{lstlisting}
+/*
+   最近公共祖先
+   要保证一整棵树连通
+   以1为根节点(注意dph[1]=1，否则深度判定会出错)
+ */
+namespace LCA {
+  const int N = 50010, LEV = 20;
+  int dph[N];
+  int fa[N][LEV];
+  vector<int> G[N];
+  void add(int a, int b) {
+    G[a].push_back(b);
+    G[b].push_back(a);
+  }
+  void dfs(int rt, int f) {
+    for (int i = 1; i < LEV; i++) {
+      if (dph[rt] - 1 < (1 << i)) break;
+      fa[rt][i] = fa[fa[rt][i - 1]][i - 1];
+    }
+    for (int v : G[rt]) {
+      if (v == f) continue;
+      dph[v] = dph[rt] + 1;
+      fa[v][0] = rt;
+      dfs(v, rt);
+    }
+  }
+  int lca(int a, int b) {
+    if (dph[a] < dph[b]) swap(a, b);
+    int t = dph[a] - dph[b];
+    for (int i = 0; i < LEV; i++)
+      if ((1 << i) & t) a = fa[a][i];
+    for (int i = LEV - 1; i >= 0; i--) {
+      if (fa[a][i] != fa[b][i]) a = fa[a][i], b = fa[b][i];
+    }
+    if (a != b) return fa[a][0];
+    return a;
+  }
+  // 从节点x往上走l个节点的位置
+  int GoUp(int x, int l) {
+    for (int i = 0; i < LEV; i++) {
+      if ((1 << i) & l) x = fa[x][i];
+    }
+    return x;
+  }
+  void Initialize(int n) {
+    for (int i = 1; i <= n; i++) G[i].clear();
+    memset(fa, 0, sizeof(fa));
+    dph[1] = 1;
+  }
+} // namespace LCA
+/*
+   查询路径最大值
+   (以下模板不用保证dph[1]=1)
+ */
+int head[M << 1], u[M << 1], v[M << 1], nxt[M << 1];
+inline void init() {
+  ed = 0;
+  memset(head, -1, sizeof(head));
+}
+inline void add(int a, int b, LL c) {
+  u[++ed] = a, v[ed] = b, w[ed] = c;
+  nxt[ed] = head[u[ed]];
+  head[u[ed]] = ed;
+}
+const int LEV = 20;
+LL fw[N][LEV];
+int fa[N][LEV], dph[N];
+void dfs(int rt, int fx) {
+  vis[rt] = 1;
+  for (int i = 1; i < LEV; i++) {
+    fa[rt][i] = fa[fa[rt][i - 1]][i - 1];
+    fw[rt][i] = max(fw[rt][i - 1], fw[fa[rt][i - 1]][i - 1]);
+  }
+  for (int i = head[rt]; ~i; i = nxt[i]) {
+    if (v[i] == fx) continue;
+    fa[v[i]][0] = rt;
+    fw[v[i]][0] = w[i];
+    dph[v[i]] = dph[rt] + 1;
+    dfs(v[i], rt);
+  }
+}
+LL Cal(int a, int b) {
+  LL res = 0;
+  if (dph[a] < dph[b]) swap(a, b);
+  for (int i = LEV - 1; i >= 0; i--) {
+    if (dph[fa[a][i]] >= dph[b]) {
+      res = max(res, fw[a][i]);
+      a = fa[a][i];
+    }
+  }
+  for (int i = LEV - 1; i >= 0; i--) {
+    if (fa[a][i] != fa[b][i]) {
+      res = max(res, max(fw[a][i], fw[b][i]));
+      a = fa[a][i];
+      b = fa[b][i];
+    }
+  }
+  if (a != b) res = max(res, max(fw[a][0], fw[b][0]));
+  return res;
+}
+/*
+   对于森林的处理方式
+ */
+void build() {
+  memset(vis, 0, sizeof(vis));
+  for (int i = 1; i <= n; i++) {
+    if (!vis[i]) dfs(i, 0);
+  }
+}
+
+\end{lstlisting}
+
+\section{点分治}
+
+\begin{lstlisting}
+/*
+  给出一颗树，结点权值为 a_i
+  求：_ min(a_u, a_v) dis(u, v)
+ */
+#include <bits/stdc++.h>
+using namespace std;
+
+const int N = 2e5 + 10;
+
+#define rep(i, s, t) for (int i = (int)(s); i <= (int)(t); ++i)
+
+const int mod = 998244353;
+
+int root, mx[N], sz[N];
+int n, m, S, tot;
+bool vis[N];
+vector<int> G[N];
+
+bool chkmax(int &x, int y) {
+  if (x < y) return x = y, 1; return false;
+}
+
+int read() {
+  int x = 0, ch = getchar();
+  while (ch < '0' || ch > '9') ch = getchar();
+  while (ch >='0' && ch <='9')
+    x = x * 10 + (ch ^ 48), ch = getchar();
+  return x;
+}
+
+#define int long long
+int a[N], ans;
+pair<int, int> q[(int)(1e6) + 10];
+
+void dfs_root(int x, int fa) {
+  mx[x] = 0, sz[x] = 1;
+  for (int y : G[x]) {
+    if (y == fa || vis[y]) continue;
+    dfs_root(y, x);
+    sz[x] += sz[y];
+    chkmax(mx[x], sz[y]);
+  }
+  chkmax(mx[x], S - sz[x]);
+  if (mx[x] < mx[root]) root = x;
+}
+
+void dfs_dis(int x, int fa, int dis) {
+  q[++ tot] = make_pair(a[x], dis);
+  for (int y : G[x]) {
+    if (y == fa || vis[y]) continue;
+    dfs_dis(y, x, dis + 1);
+  }
+}
+
+int Mod(int x) {
+  return (x % mod + mod) % mod;
+}
+
+int calc(int x, int fa, int org) {
+  int res = 0;
+  tot = 0;
+  dfs_dis(x, fa, org);
+  sort(q + 1, q + tot + 1);
+  int dis_sum = 0, dis_prefix = 0;
+  rep(i, 1, tot) {
+    dis_sum += q[i].second;
+  }
+  rep(i, 1, tot) {
+    dis_prefix += q[i].second;
+    res = Mod(res + q[i].first * (dis_sum - dis_prefix));
+    res = Mod(res + (tot - i) * q[i].second * q[i].first);
+  }
+  return Mod(res + res);
+}
+
+void solve(int x) {
+  tot = 0;
+  vis[x] = 1;
+  ans += calc(x, 0, 0);
+  for (int y : G[x]) {
+    if (vis[y]) continue;
+    ans = Mod(ans - calc(y, x, 1));
+    mx[root = 0] = S = n;
+    S = sz[x];
+    dfs_root(y, x);
+    solve(root);
+  }
+}
+
+signed main() {
+  n = read();
+  rep(i, 1, n) a[i] = read();
+  rep(i, 1, n - 1) {
+    int x = read(), y = read();
+    G[x].push_back(y);
+    G[y].push_back(x);
+  }
+  mx[root = 0] = S = n;
+  dfs_root(1, 0);
+  solve(root);
+  printf("%lld", ans);
+}
+\end{lstlisting}
+
+\section{最大团}
+
+\begin{lstlisting}
+/* 极大团
+ * 定义：团是G的一个完全子图，不能被更大的团所包含的团称为极大团
+ * 用法：Initialize(n)
+ * Add_Edge()
+ * Dfs(1,0,n,0)
+ */
+namespace BronKerbosch {
+  const int N = 200;
+  int G[N][N], Allow[N][N], Forbid[N][N], Num[N][N], Ans;
+  void Initialize(int n) {
+    Ans = 0;
+    for (int i = 1; i <= n; i++) Allow[1][i] = i;
+    memset(G, 0, sizeof(G));
+  }
+  void Add_Edge(int x, int y) { G[x][y] = G[y][x] = 1; }
+  void Dfs(int x, int Nn, int An, int Fn) {
+    if (!An && !Fn) {
+      // Nn为极大团的大小，当两个集合同时为0时表示找到了一个极大团
+      Ans = max(Ans, Nn);
+      return;
+      // 可以用 Ans++ 统计极大团的数量
+    }
+    if (!An) return;
+    int key = Allow[x][1];
+    for (int j = 1; j <= An; j++) {
+      int v = Allow[x][j], tAn = 0, tFn = 0;
+      if (G[key][v]) continue;
+      for (int i = 1; i <= Nn; i++) Num[x + 1][i] = Num[x][1];
+      Num[x + 1][Nn + 1] = v;
+      for (int i = 1; i <= An; i++)
+        if (G[v][Allow[x][i]]) Allow[x + 1][++tAn] = Allow[x][i];
+      for (int i = 1; i <= Fn; i++)
+        if (G[v][Forbid[x][i]]) Forbid[x + 1][++tFn] = Forbid[x][i];
+      Dfs(x + 1, Nn + 1, tAn, tFn);
+      Allow[x][j] = 0;
+      Forbid[x][++Fn] = v;
+    }
+  }
+} // namespace BronKerbosch
+
+\end{lstlisting}
+
+
+\section{最小环}
+
+\begin{lstlisting}
+// 有向图最小环
+void solve() {
+#define rep(i, n) for (int i = 1; i <= n; i++)
+  rep(i, n) rep(j, n) d[i][j] = INF;
+  while (m--) {
+    scanf("%d%d%d", &x, &y, &z);
+    if (z < d[x][y]) d[x][y] = z;
+  }
+  rep(k, n) rep(i, n) rep(j, n) d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
+  rep(i, n) ans = min(ans, d[i][i]);
+}
+// 无向图最小环
+void solve() {
+  for (int i = 1; i <= n; i++)
+    for (int j = 1; j <= n; j++) g[i][j] = d[i][j] = inf;
+  while (m--) {
+    scanf("%d%d%d", &x, &y, &z);
+    if (z < g[x][y]) g[x][y] = g[y][x] = d[x][y] = d[y][x] = z;
+  }
+  for (ans = inf, k = 1; k <= n; k++) {
+    for (i = 1; i < k; i++)
+      for (j = i + 1; j < k; j++)
+        ans = min(ans, d[i][j] + g[i][k] + g[k][j]);
+    for (i = 1; i <= n; i++)
+      for (j = 1; j <= n; j++) d[i][j] = min(d[i][j], d[i][k] + d[k][j]);
+  }
+}
+
+\end{lstlisting}
+
+\section{最小点覆盖}
+
+\begin{lstlisting}
+/*
+   最小点覆盖
+   邻接矩阵给出覆盖关系
+   */
+#include <bitset>
+#include <cstdio>
+using namespace std;
+const int N = 80;
+bitset<N> a[N];
+char s[N];
+int n, limit, ans[N], cnt = 1;
+bool dfs(int d, int pos, bitset<N> mp) {
+  if (d >= limit) return mp.count() == n;
+  for (int i = pos; i < n; i++)
+    if (dfs(d + 1, (ans[d] = i + 1), mp | a[i])) return 1;
+  return 0;
+}
+int main() {
+  while (~scanf("%d", &n)) {
+    for (int i = 0; i < n; i++) {
+      a[i].reset();
+      scanf("%s", s);
+      for (int j = 0; j < n; j++)
+        if (s[j] == '1' || i == j) a[i].set(j);
+    }
+    for (limit = 1; limit <= 80; limit++)
+      if (dfs(0, 0, bitset<N>())) break;
+    printf("Case %d: %d", cnt++, limit);
+    for (int i = 0; i < limit; i++) printf(" %d", ans[i]);
+    puts("");
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{Kruskal 重构}
+
+\begin{lstlisting}
+/*
+   Kruskal重构树
+   在用kruskal算法做最小生成树的过程中，将边权作为点权，
+   当做父节点将两个需要连接的点连起来，
+   那么树上每个点的权值都小于父节点的权值，构成一棵单调可二分的树
+ */
+void ReKruskal(int n, int m) {
+  sort(e + 1, e + m + 1, cmp);
+  for (int i = 1; i <= n; i++) {
+    f[i] = i;
+    w[i] = 0;
+  }
+  R = n;
+  for (int i = 1; i <= m; i++) {
+    int x = sf(e[i].x), y = sf(e[i].y);
+    if (x == y) continue;
+    w[++R] = e[i].z;
+    f[x] = f[y] = f[R] = R;
+    v[R].push_back(x);
+    v[R].push_back(y);
+  }
+  w[0] = N;
+}
+/*
+Problem:
+  给出一个无向连通图，有n个顶点，m条边。
+  有q次询问，每次给出x,y,z，
+  最小化从x和y开始，总计访问z个不重复顶点，经过的边的编号的最大值
+Solution:
+  二分答案+Kruskal重构树
+  对原图建立Kruskal重构树，对重构树建立父节点倍增表，
+  对于每个询问，二分最大边编号，倍增找到x和y节点在重构树上对应的小于等于二分值的深度最小的祖先，
+  其子树和即为能够访问到的不重复点数量。
+ */
+#include <bits/stdc++.h>
+using namespace std;
+const int N = 500010;
+vector<int> v[N];
+int f[N], w[N], R;
+int sf(int x) { return x == f[x] ? x : f[x] = sf(f[x]); }
+struct data {
+  int x, y, z;
+} e[N];
+bool cmp(data a,data b){
+  return a.z < b.z;
+}
+void ReKruskal(int n, int m) {
+  sort(e + 1, e + m + 1, cmp);
+  for (int i = 1; i <= n; i++) {
+    f[i] = i;
+    w[i] = 0;
+  }
+  R = n;
+  for (int i = 1; i <= m; i++) {
+    int x = sf(e[i].x), y = sf(e[i].y);
+    if (x == y) continue;
+    w[++R] = e[i].z;
+    f[x] = f[y] = f[R] = R;
+    v[R].push_back(x);
+    v[R].push_back(y);
+  }
+  w[0] = N;
+}
+int n, m;
+const int LOG = 20;
+int s[N], fa[N][LOG+1];
+void dfs(int x, int fx) {
+  fa[x][0] = fx;
+  for (int i = 1; i < LOG; i++) fa[x][i] = fa[fa[x][i - 1]][i - 1];
+  for (auto y : v[x]) {
+    dfs(y, x);
+    s[x] += s[y];
+  }
+  if (x <= n) s[x] = 1;
+}
+int find(int x, int W) {
+  for (int i = LOG; ~i; i--)
+    if (w[fa[x][i]] <= W) x = fa[x][i];
+  return x;
+}
+int main() {
+  scanf("%d%d", &n, &m);
+  for (int i = 1; i <= m; i++) {
+    scanf("%d%d", &e[i].x, &e[i].y);
+    e[i].z = i;
+  }
+  ReKruskal(n, m);
+  dfs(R, 0);
+  int q, x, y, z;
+  scanf("%d", &q);
+  while (q--) {
+    scanf("%d%d%d", &x, &y, &z);
+    int ans = m, l = 0, r = m;
+    while (l <= r) {
+      int mid = (l + r) >> 1;
+      int fx = find(x, mid), fy = find(y, mid), Size = s[fx];
+      if (fy != fx) Size += s[fy];
+      if (Size >= z)
+        ans = mid, r = mid - 1;
+      else
+        l = mid + 1;
+    }
+    printf("%d\n", ans);
+  }
+  return 0;
+}
+
+\end{lstlisting}
+
+\section{带花树}
+
+\begin{lstlisting}
+/* 一般图最大匹配
+ * 用带花树求编号从0开始的n个点的图的最大匹配，时间复杂度 O(n^3)
+ * mate[]为配偶结点的编号，没有匹配上的点为-1。
+ * 传入结点个数n及各结点的出边表G[], 返回匹配点对的数量ret。
+ */
+using namespace std;
+const int N = 510;
+int n, m, x, y;
+vector<int> g[N];
+namespace Blossom {
+  int mate[N], n, ret, nxt[N], f[N], mark[N], vis[N];
+  queue<int> Q;
+  int F(int x) { return x == f[x] ? x : f[x] = F(f[x]); }
+  void merge(int a, int b) { f[F(a)] = F(b); }
+  int lca(int x, int y) {
+    static int t = 0;
+    t++;
+    for (;; swap(x, y))
+      if (~x) {
+        if (vis[x = F(x)] == t) return x;
+        vis[x] = t;
+        x = mate[x] != -1 ? nxt[mate[x]] : -1;
+      }
+  }
+  void group(int a, int p) {
+    for (int b, c; a != p; merge(a, b), merge(b, c), a = c) {
+      b = mate[a], c = nxt[b];
+      if (F(c) != p) nxt[c] = b;
+      if (F(c) != p) nxt[c] = b;
+      if (mark[b] == 2) mark[b] = 1, Q.push(b);
+      if (mark[c] == 2) mark[c] = 1, Q.push(c);
+    }
+  }
+  void aug(int s, const vector<int> G[]) {
+    for (int i = 0; i < n; ++i) nxt[i] = vis[i] = -1, f[i] = i, mark[i] = 0;
+    while (!Q.empty()) Q.pop();
+    Q.push(s);
+    mark[s] = 1;
+    while (mate[s] == -1 && !Q.empty()) {
+      int x = Q.front();
+      Q.pop();
+      for (int i = 0, y; i < (int)G[x].size(); ++i) {
+        if ((y = G[x][i]) != mate[x] && F(x) != F(y) && mark[y] != 2) {
+          if (mark[y] == 1) {
+            int p = lca(x, y);
+            if (F(x) != p) nxt[x] = y;
+            if (F(y) != p) nxt[y] = x;
+            group(x, p), group(y, p);
+          } else if (mate[y] == -1) {
+            nxt[y] = x;
+            for (int j = y, k, l; ~j; j = l)
+              k = nxt[j], l = mate[k], mate[j] = k, mate[k] = j;
+            break;
+          } else
+            nxt[y] = x, Q.push(mate[y]), mark[mate[y]] = 1, mark[y] = 2;
+        }
+      }
+    }
+  }
+  int solve(int _n, const vector<int> G[]) {
+    n = _n;
+    memset(mate, -1, sizeof(mate));
+    for (int i = 0; i < n; ++i)
+      if (mate[i] == -1) aug(i, G);
+    for (int i = ret = 0; i < n; ++i) ret += mate[i] > i;
+    printf("%d\n", ret);
+    for (int i = 0; i < n; i++) printf("%d ", mate[i] + 1);
+    return ret;
+  }
+} // namespace Blossom
+int main() {
+  scanf("%d%d", &n, &m);
+  while (m--)
+    scanf("%d%d", &x, &y), x--, y--, g[x].push_back(y), g[y].push_back(x);
+  Blossom::solve(n, g);
+  return 0;
+}
+\end{lstlisting}
+
+\section{权值带花树}
+
+\begin{lstlisting}
+/* 一般图最大权匹配
+ * 输出匹配方案
+ */
+#include <bits/stdc++.h>
+using namespace std;
+#define INF INT_MAX
+#define MAXN 400
+struct edge {
+  int u, v, w;
+  edge() {}
+  edge(int u, int v, int w) : u(u), v(v), w(w) {}
+};
+int n, n_x;
+edge g[MAXN * 2 + 1][MAXN * 2 + 1];
+int lab[MAXN * 2 + 1];
+int match[MAXN * 2 + 1], slack[MAXN * 2 + 1], st[MAXN * 2 + 1],
+    pa[MAXN * 2 + 1];
+int flower_from[MAXN * 2 + 1][MAXN + 1], S[MAXN * 2 + 1], vis[MAXN * 2 + 1];
+vector<int> flower[MAXN * 2 + 1];
+queue<int> q;
+inline int e_delta(const edge &e) { // does not work inside blossoms
+  return lab[e.u] + lab[e.v] - g[e.u][e.v].w * 2;
+}
+inline void update_slack(int u, int x) {
+  if (!slack[x] || e_delta(g[u][x]) < e_delta(g[slack[x]][x])) slack[x] = u;
+}
+inline void set_slack(int x) {
+  slack[x] = 0;
+  for (int u = 1; u <= n; ++u)
+    if (g[u][x].w > 0 && st[u] != x && S[st[u]] == 0) update_slack(u, x);
+}
+void q_push(int x) {
+  if (x <= n)
+    q.push(x);
+  else
+    for (size_t i = 0; i < flower[x].size(); i++) q_push(flower[x][i]);
+}
+inline void set_st(int x, int b) {
+  st[x] = b;
+  if (x > n)
+    for (size_t i = 0; i < flower[x].size(); ++i) set_st(flower[x][i], b);
+}
+inline int get_pr(int b, int xr) {
+  int pr = find(flower[b].begin(), flower[b].end(), xr) - flower[b].begin();
+  if (pr % 2 == 1) { //檢查他在前一層圖是奇點還是偶點
+    reverse(flower[b].begin() + 1, flower[b].end());
+    return (int)flower[b].size() - pr;
+  } else
+    return pr;
+}
+inline void set_match(int u, int v) {
+  match[u] = g[u][v].v;
+  if (u > n) {
+    edge e = g[u][v];
+    int xr = flower_from[u][e.u], pr = get_pr(u, xr);
+    for (int i = 0; i < pr; ++i) set_match(flower[u][i], flower[u][i ^ 1]);
+    set_match(xr, v);
+    rotate(flower[u].begin(), flower[u].begin() + pr, flower[u].end());
+  }
+}
+inline void augment(int u, int v) {
+  for (;;) {
+    int xnv = st[match[u]];
+    set_match(u, v);
+    if (!xnv) return;
+    set_match(xnv, st[pa[xnv]]);
+    u = st[pa[xnv]], v = xnv;
+  }
+}
+inline int get_lca(int u, int v) {
+  static int t = 0;
+  for (++t; u || v; swap(u, v)) {
+    if (u == 0) continue;
+    if (vis[u] == t) return u;
+    vis[u] = t; //這種方法可以不用清空v陣列
+    u = st[match[u]];
+    if (u) u = st[pa[u]];
+  }
+  return 0;
+}
+inline void add_blossom(int u, int lca, int v) {
+  int b = n + 1;
+  while (b <= n_x && st[b]) ++b;
+  if (b > n_x) ++n_x;
+  lab[b] = 0, S[b] = 0;
+  match[b] = match[lca];
+  flower[b].clear();
+  flower[b].push_back(lca);
+  for (int x = u, y; x != lca; x = st[pa[y]])
+    flower[b].push_back(x), flower[b].push_back(y = st[match[x]]),
+      q_push(y);
+  reverse(flower[b].begin() + 1, flower[b].end());
+  for (int x = v, y; x != lca; x = st[pa[y]])
+    flower[b].push_back(x), flower[b].push_back(y = st[match[x]]),
+      q_push(y);
+  set_st(b, b);
+  for (int x = 1; x <= n_x; ++x) g[b][x].w = g[x][b].w = 0;
+  for (int x = 1; x <= n; ++x) flower_from[b][x] = 0;
+  for (size_t i = 0; i < flower[b].size(); ++i) {
+    int xs = flower[b][i];
+    for (int x = 1; x <= n_x; ++x)
+      if (g[b][x].w == 0 || e_delta(g[xs][x]) < e_delta(g[b][x]))
+        g[b][x] = g[xs][x], g[x][b] = g[x][xs];
+    for (int x = 1; x <= n; ++x)
+      if (flower_from[xs][x]) flower_from[b][x] = xs;
+  }
+  set_slack(b);
+}
+inline void expand_blossom(int b) { // S[b] == 1
+  for (size_t i = 0; i < flower[b].size(); ++i)
+    set_st(flower[b][i], flower[b][i]);
+  int xr = flower_from[b][g[b][pa[b]].u], pr = get_pr(b, xr);
+  for (int i = 0; i < pr; i += 2) {
+    int xs = flower[b][i], xns = flower[b][i + 1];
+    pa[xs] = g[xns][xs].u;
+    S[xs] = 1, S[xns] = 0;
+    slack[xs] = 0, set_slack(xns);
+    q_push(xns);
+  }
+  S[xr] = 1, pa[xr] = pa[b];
+  for (size_t i = pr + 1; i < flower[b].size(); ++i) {
+    int xs = flower[b][i];
+    S[xs] = -1, set_slack(xs);
+  }
+  st[b] = 0;
+}
+inline bool on_found_edge(const edge &e) {
+  int u = st[e.u], v = st[e.v];
+  if (S[v] == -1) {
+    pa[v] = e.u, S[v] = 1;
+    int nu = st[match[v]];
+    slack[v] = slack[nu] = 0;
+    S[nu] = 0, q_push(nu);
+  } else if (S[v] == 0) {
+    int lca = get_lca(u, v);
+    if (!lca)
+      return augment(u, v), augment(v, u), true;
+    else
+      add_blossom(u, lca, v);
+  }
+  return false;
+}
+inline bool matching() {
+  memset(S + 1, -1, sizeof(int) * n_x);
+  memset(slack + 1, 0, sizeof(int) * n_x);
+  q = queue<int>();
+  for (int x = 1; x <= n_x; ++x)
+    if (st[x] == x && !match[x]) pa[x] = 0, S[x] = 0, q_push(x);
+  if (q.empty()) return false;
+  for (;;) {
+    while (q.size()) {
+      int u = q.front();
+      q.pop();
+      if (S[st[u]] == 1) continue;
+      for (int v = 1; v <= n; ++v)
+        if (g[u][v].w > 0 && st[u] != st[v]) {
+          if (e_delta(g[u][v]) == 0) {
+            if (on_found_edge(g[u][v])) return true;
+          } else
+            update_slack(u, st[v]);
+        }
+    }
+    int d = INF;
+    for (int b = n + 1; b <= n_x; ++b)
+      if (st[b] == b && S[b] == 1) d = min(d, lab[b] / 2);
+    for (int x = 1; x <= n_x; ++x)
+      if (st[x] == x && slack[x]) {
+        if (S[x] == -1)
+          d = min(d, e_delta(g[slack[x]][x]));
+        else if (S[x] == 0)
+          d = min(d, e_delta(g[slack[x]][x]) / 2);
+      }
+    for (int u = 1; u <= n; ++u) {
+      if (S[st[u]] == 0) {
+        if (lab[u] <= d) return 0;
+        lab[u] -= d;
+      } else if (S[st[u]] == 1)
+        lab[u] += d;
+    }
+    for (int b = n + 1; b <= n_x; ++b)
+      if (st[b] == b) {
+        if (S[st[b]] == 0)
+          lab[b] += d * 2;
+        else if (S[st[b]] == 1)
+          lab[b] -= d * 2;
+      }
+    q = queue<int>();
+    for (int x = 1; x <= n_x; ++x)
+      if (st[x] == x && slack[x] && st[slack[x]] != x &&
+          e_delta(g[slack[x]][x]) == 0)
+        if (on_found_edge(g[slack[x]][x])) return true;
+    for (int b = n + 1; b <= n_x; ++b)
+      if (st[b] == b && S[b] == 1 && lab[b] == 0) expand_blossom(b);
+  }
+  return false;
+}
+inline pair<long long, int> weight_blossom() {
+  memset(match + 1, 0, sizeof(int) * n);
+  n_x = n;
+  int n_matches = 0;
+  long long tot_weight = 0;
+  for (int u = 0; u <= n; ++u) st[u] = u, flower[u].clear();
+  int w_max = 0;
+  for (int u = 1; u <= n; ++u)
+    for (int v = 1; v <= n; ++v) {
+      flower_from[u][v] = (u == v ? u : 0);
+      w_max = max(w_max, g[u][v].w);
+    }
+  for (int u = 1; u <= n; ++u) lab[u] = w_max;
+  while (matching()) ++n_matches;
+  for (int u = 1; u <= n; ++u)
+    if (match[u] && match[u] < u) tot_weight += g[u][match[u]].w;
+  return make_pair(tot_weight, n_matches);
+}
+inline void init_weight_graph() {
+  for (int u = 1; u <= n; ++u)
+    for (int v = 1; v <= n; ++v) g[u][v] = edge(u, v, 0);
+}
+int main() {
+  int m;
+  scanf("%d%d", &n, &m);
+  init_weight_graph();
+  for (int i = 0; i < m; ++i) {
+    int u, v, w;
+    scanf("%d%d%d", &u, &v, &w);
+    g[u][v].w = g[v][u].w = w;
+  }
+  printf("%lld\n", weight_blossom().first);
+  for (int u = 1; u <= n; ++u) printf("%d ", match[u]);
+  puts("");
+  return 0;
+}
+
+\end{lstlisting}
